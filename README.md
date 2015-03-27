@@ -9,4 +9,4 @@ MSAN 622 Information Visualization
 
 ## About Me ##
 
-I am a current student in the Master's in Analytics (MSAN) program at the University of San Francisco.
+I am currently a student in the Master's in Analytics (MSAN) program at the University of San Francisco.
