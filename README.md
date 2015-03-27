@@ -7,6 +7,6 @@ MSAN 622 Information Visualization
 | **Email:** | <mwshadish@dons.usfca.edu> |
 |   **Web:** | <http://mshadish.github.io/msan_622> |
 
-## About Me ##
-
-I am currently a student in the Master's in Analytics (MSAN) program at the University of San Francisco.
+Summary
+=======
+This repository contains the scripts for the github.io page (linked above) outlining all of the homeworks and projects associated with the Data Visualization course in the MSAN program.
