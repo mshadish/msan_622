@@ -1,0 +1,247 @@
+<!-- Matt Shadish -->
+
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<style>
+
+h1 {
+	font-family: 'Andale Mono';
+}
+
+label {
+	position: absolute;
+	top: 60px;
+	left: 850px;
+}
+
+.grid .tick {
+	stroke: lightgrey;
+	opacity: 0.7;
+}
+.grid path {
+	stroke-width: 0;
+}
+
+.bar:hover {
+	fill: black;
+}
+
+.axis {
+	font: 18px sans-serif;
+}
+
+.axis path,
+.axis line {
+	fill: none;
+	stroke: #000;
+	shape-rendering: crispEdges;
+}
+
+.x.axis path {
+	display: none;
+}
+
+</style>
+
+
+<label><input type="checkbox">Sort by value</label>
+
+<script src="js/d3.min.js"></script>
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+
+
+<header>
+<h1>Homework 1</h1>
+</header>
+
+<body>
+
+
+<script>
+	// plot set up
+	var margin = {top: 40, right: 20, bottom: 30, left: 50},
+		width = 960 - margin.left - margin.right,
+		height = 500 - margin.top - margin.bottom;
+	
+	var x = d3.scale.ordinal()
+		.rangeRoundBands([0, width], .1);
+
+	var y = d3.scale.linear()
+		.range([height, 0]);
+
+	var xAxis = d3.svg.axis()
+		.scale(x)
+		.orient('bottom');
+
+	var yAxis = d3.svg.axis()
+		.scale(y)
+		.orient('left');
+
+
+
+	// initialize our svg
+	var svg = d3.select('body').append('svg')
+		.attr('width', width + margin.left + margin.right)
+		.attr('height', height + margin.top + margin.bottom)
+	.append('g')
+		.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+
+
+	// DEALING WITH THE DATA
+
+
+	// grab the current query string, decoded
+	var input_query_raw = decodeURI(window.location.search)
+	// remove the leading question mark
+	var input_query = input_query_raw.substring(1, input_query_raw.length);
+	// log it to the console
+	console.log(input_query);
+
+	// remove all non-alphabet characters
+	query_string = input_query.replace(/[^a-zA-Z]/g, '');
+	// convert to lowercase
+	query_string = query_string.toLowerCase();
+
+
+	// define a function to count the character frequency for a given input string
+	function freqCounter(in_string) {
+	    // initialize a dictionary to keep track of the letter count
+	    var letter_count = {};
+	    // loop through the input string
+	    for (var idx = 0; idx < in_string.length; idx++) {
+			// grab the current letter
+			var current_letter = in_string[idx]
+			// and update the dictionary
+			if (letter_count.hasOwnProperty(current_letter)) {
+				letter_count[current_letter]++;
+			} else {
+				letter_count[current_letter] = 1;
+			}
+	    }
+	    return letter_count;
+	}
+
+	// run the function for our query string
+	var bar_dict = freqCounter(query_string);
+	// convert to list of dicts
+	var d3List = d3.entries(bar_dict);
+
+	// sorting function
+	d3List.sort(function(first, second) {
+		if (first.key > second.key) {
+			return 1;
+		}
+		else if (first.key < second.key) {
+			return -1;
+		}
+		else {
+			return 0;
+		}
+	});
+
+	// log our sorted results to the console
+	for (var i = 0; i < d3List.length; i++) {
+		console.log(d3List[i].key + ': ' + d3List[i].value);
+	}
+
+
+
+
+	// now the callback functions
+	x.domain(d3List.map(function(i) {return i.key;}));
+	y.domain([0, d3.max(d3List, function(j) {return j.value;})]);
+
+	yAxis.ticks((d3.max(d3List, function(k) {return k.value;}))/2 + 1);
+
+
+	// add x-axis stuff
+	svg.append('g')
+		.attr('class', 'x axis')
+		.attr('transform', 'translate(0,' + height + ')')
+		.call(xAxis);
+
+	// add y-axis stuff
+	svg.append('g')
+		.attr('class', 'y axis')
+		.call(yAxis)
+	.append('text')
+		.attr('transform', 'rotate(-90)')
+		.attr('y', 0 - margin.left)
+		.attr('x', 0 - ((height - margin.top - margin.bottom) / 2))
+		.attr('dy', '.71em')
+		.style('text-anchor', 'end')
+		.text('Count');
+	// add gridlines
+	svg.append('g')
+		.attr('class', 'grid')
+		.call(yAxis
+				.tickSize(-width, 0, 0)
+				.tickFormat('')
+		);
+
+	// add a vowels array for formatting use
+	var vowels = ['a','e','i','o','u'];
+
+	// enter all new data
+	svg.selectAll('.bar')
+		.data(d3List)
+	.enter().append('rect')
+		.attr('class', 'bar')
+		// x
+		.attr('x', function(a) {return x(a.key);})
+		.attr('width', x.rangeBand())
+		// y
+		.attr('y', function(b) {return y(b.value);})
+		.attr('height', function(c) {return height - y(c.value);})
+		// fill color
+		.attr('fill', function(a) {return ((/^[aeiou]$/g).test(a.key) ? '#33a02c':'#1f78b4'); });
+
+
+	// let's add a title
+	svg.append('text')
+		.attr('x', (width / 2))
+		.attr('y', 0 - (margin.top / 2))
+		.attr('text-anchor', 'middle')
+		.attr('font-size', '20px')
+		.text(input_query);
+
+
+
+	// sorting
+	d3.select('input').on('change', changeSort);
+
+	function changeSort() {
+
+		var x_0 = x.domain(d3List.sort(this.checked
+			? function(a,b) {return b.value - a.value;}
+			: function(a,b) {return d3.descending(b.key, a.key);})
+			.map(function(i) {return i.key;}))
+			.copy();
+
+		svg.selectAll('.bar')
+			.sort(function(a,b) {return x_0(a.key) - x_0(b.key);});
+
+		var transition = svg.transition().duration(1000),
+			delay = function(d,j) {return j*50; };
+
+		transition.selectAll('.bar')
+			.delay(delay)
+			.attr('x', function(h) {return x_0(h.key); });
+
+		transition.select('.x.axis')
+			.call(xAxis)
+		.selectAll('g')
+			.delay(delay);
+	}
+
+
+
+
+</script>
+
+
+
+</body>
