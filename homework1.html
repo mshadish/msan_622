@@ -56,6 +56,7 @@ label {
 <h1>Homework 1</h1>
 </header>
 
+
 <body>
 
 
@@ -154,7 +155,7 @@ label {
 	x.domain(d3List.map(function(i) {return i.key;}));
 	y.domain([0, d3.max(d3List, function(j) {return j.value;})]);
 
-	yAxis.ticks((d3.max(d3List, function(k) {return k.value;}))/2 + 1);
+	yAxis.ticks((d3.max(d3List, function(k) {return k.value;})));
 
 
 	// add x-axis stuff
@@ -224,7 +225,7 @@ label {
 		svg.selectAll('.bar')
 			.sort(function(a,b) {return x_0(a.key) - x_0(b.key);});
 
-		var transition = svg.transition().duration(1000),
+		var transition = svg.transition().duration(800),
 			delay = function(d,j) {return j*50; };
 
 		transition.selectAll('.bar')
