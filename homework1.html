@@ -60,6 +60,7 @@ label {
 <body>
 
 
+
 <script>
 	// plot set up
 	var margin = {top: 40, right: 20, bottom: 30, left: 50},
@@ -242,6 +243,27 @@ label {
 
 
 </script>
+
+
+<h2 class="header">Functionality</h2>
+<p>Below is a list of the functionality I have implemented in this bar chart:</p>
+<ul>
+	<li>Once the query string decoded, the original query string as well as a dictionary representation of the character counts are printed to the console.</li>
+	<li>I've added simple gridlines along the y-axis for ease of comparison among characters.</li>
+	<li>The number of y-axis ticks has been set to equal the maximum character frequency, thereby ensuring that we only display integer counts along the y-axis (instead of fractional counts).</li>
+	<li>The title of the bar chart is set equal the decoded query string.</li>
+	<li>Vowels are colored differently from consonants, with the colors determined using colorbrewer.</li>
+	<li>Using a checkbox, the viewer can toggle whether or not the bar chart is sorted by frequency.  By default, the results are sorted alphabetically.</li>
+</ul>
+
+<h2 class="header">Discussion</h2>
+<p>I've implemented a simple bar chart that takes in some query string, strips away any non-alphabetical characters, and normalizes all letters to lowercase before plotting a bar chart of the letter frequencies.  First and foremost, I wanted to created an intuitive graphic for viewers to see the word counts, so I changed the number of y-axis ticks to match the maximum letter frequency.  In this way, the viewer would only see integer values on the y-axis, which makes sense; for example, it would not make sense to see 2.5 instances of the letter "a."  I also displayed the intial input string as the title such that there would be no confusion as to what the bar chart was displaying.</p>
+<p>To improve comparability among the different letter counts, I added gridlines the viewer can use as a reference.  In addition, I chose to color bars associated with vowels differently from bars associated with consonants.  In order to avoid accidentally emphasizing one color over the other, I used one of colorbrewer's qualitative color schemes when choosing the two different bar colors.  Furthermore, in order to highlight the particular bar that the viewer hovers their mouse over, I changed the hover-over color to black.</p>
+<p>In terms of interactivity, I added a checkbox to toggle the sort order of the bar chart.  When checked, the bars will be sorted by frequency, with the most frequent letters showing up on the lefthand side of the bar chart.  By default, the bars are displayed in alphabetical order.</p>
+
+
+
+
 
 
 
