@@ -3,7 +3,19 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<style>
+
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+
+<style type="text/css">
+
+body {
+        padding-top: 50px;
+        padding-bottom: 20px;
+        padding-left: 30px;
+        padding-right: 30px;
+}
 
 h1 {
 	font-family: 'Andale Mono';
@@ -11,7 +23,7 @@ h1 {
 
 label {
 	position: absolute;
-	top: 60px;
+	top: 150px;
 	left: 850px;
 }
 
@@ -22,6 +34,7 @@ label {
 .grid path {
 	stroke-width: 0;
 }
+
 
 .bar:hover {
 	fill: black;
@@ -45,7 +58,7 @@ label {
 </style>
 
 
-<label><input type="checkbox">Sort by value</label>
+<label><input type="checkbox"> Sort by value</label>
 
 <script src="js/d3.min.js"></script>
 <script src="js/jquery.min.js"></script>
@@ -59,9 +72,45 @@ label {
 
 <body>
 
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle Navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="..">MSAN 622</a>
+        </div>
+
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li><a href="../#homework">Homework</a></li>
+                <li><a href="../#project">Project</a></li>
+                <li><a href="../#participation">Participation</a></li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="../#about">About</a></li>
+                <li><a href="../#contact">Contact</a></li>
+            </ul>
+        </div><!--/.nav-collapse -->
+    </div>
+</nav>
+
+
+<form>
+Query String:<br>
+<input type="text" name="query_string">
+</form>
+
 
 
 <script>
+	// let's initialize some constants
+	var bar_raise_delay = 500;
+	var sort_shift_delay = 750;
 	// plot set up
 	var margin = {top: 40, right: 20, bottom: 30, left: 50},
 		width = 960 - margin.left - margin.right,
@@ -94,16 +143,17 @@ label {
 
 	// DEALING WITH THE DATA
 
-
 	// grab the current query string, decoded
-	var input_query_raw = decodeURI(window.location.search)
+	var input_query_raw = decodeURIComponent(window.location.search).replace(/\+/g, ' ')
 	// remove the leading question mark
 	var input_query = input_query_raw.substring(1, input_query_raw.length);
 	// log it to the console
 	console.log(input_query);
 
-	// remove all non-alphabet characters
-	query_string = input_query.replace(/[^a-zA-Z]/g, '');
+	// remove the leading query_string indicator, if any
+	input_query_extracted = input_query.replace(/^query_string\=/g, '')
+	// and remove all non-alphabet characters
+	query_string = input_query_extracted.replace(/[^a-zA-Z]/g, '');
 	// convert to lowercase
 	query_string = query_string.toLowerCase();
 
@@ -152,6 +202,8 @@ label {
 
 
 
+
+
 	// now the callback functions
 	x.domain(d3List.map(function(i) {return i.key;}));
 	y.domain([0, d3.max(d3List, function(j) {return j.value;})]);
@@ -184,22 +236,31 @@ label {
 				.tickFormat('')
 		);
 
-	// add a vowels array for formatting use
-	var vowels = ['a','e','i','o','u'];
-
-	// enter all new data
-	svg.selectAll('.bar')
+	
+	bars = svg.selectAll('.bar')
 		.data(d3List)
-	.enter().append('rect')
-		.attr('class', 'bar')
-		// x
-		.attr('x', function(a) {return x(a.key);})
-		.attr('width', x.rangeBand())
-		// y
-		.attr('y', function(b) {return y(b.value);})
-		.attr('height', function(c) {return height - y(c.value);})
+	.enter().append('rect');
+
+
+	// initialize zero
+	bars.attr('class', 'bar');
+	bars.attr('x', function(a) {return x(a.key);});
+	//bars.attr('x', 0);
+	bars.attr('width', x.rangeBand());
+	bars.attr('y', height)
+		.attr('height', 0);
+
 		// fill color
-		.attr('fill', function(a) {return ((/^[aeiou]$/g).test(a.key) ? '#33a02c':'#1f78b4'); });
+	bars.attr('fill', function(a) {return ((/^[aeiou]$/g).test(a.key) ? '#33a02c':'#1f78b4'); });
+
+
+	// here is the transition
+	bars.transition().duration(bar_raise_delay)
+		.delay(function(x) {return d3List.indexOf(x) * bar_raise_delay;})
+		.attr("x", function(a) {return x(a.key);})
+		.attr("y", function(b) {return y(b.value);})
+		.attr("height", function(c) {return height - y(c.value);});
+
 
 
 	// let's add a title
@@ -208,7 +269,7 @@ label {
 		.attr('y', 0 - (margin.top / 2))
 		.attr('text-anchor', 'middle')
 		.attr('font-size', '20px')
-		.text(input_query);
+		.text(input_query_extracted);
 
 
 
@@ -226,7 +287,7 @@ label {
 		svg.selectAll('.bar')
 			.sort(function(a,b) {return x_0(a.key) - x_0(b.key);});
 
-		var transition = svg.transition().duration(800),
+		var transition = svg.transition().duration(sort_shift_delay),
 			delay = function(d,j) {return j*50; };
 
 		transition.selectAll('.bar')
@@ -244,25 +305,51 @@ label {
 
 </script>
 
-
-<h2 class="header">Functionality</h2>
+<div class="row">
+<h2 class="page-header" align="center">Functionality</h2>
 <p>Below is a list of the functionality I have implemented in this bar chart:</p>
+<h3 class="header">C-level Functionality</h3>
 <ul>
-	<li>Once the query string decoded, the original query string as well as a dictionary representation of the character counts are printed to the console.</li>
-	<li>I've added simple gridlines along the y-axis for ease of comparison among characters.</li>
-	<li>The number of y-axis ticks has been set to equal the maximum character frequency, thereby ensuring that we only display integer counts along the y-axis (instead of fractional counts).</li>
-	<li>The title of the bar chart is set equal the decoded query string.</li>
-	<li>Vowels are colored differently from consonants, with the colors determined using colorbrewer.</li>
-	<li>Using a checkbox, the viewer can toggle whether or not the bar chart is sorted by frequency.  By default, the results are sorted alphabetically.</li>
+	<li>Once the query string has been read in (either from the page URL or the search box), it is decoded and converted to lowercase.</li>
+	<li>The letter counts are stored in a dictionary named 'bar_dict'.</li>
+	<li>The decoded text as well as the letter counts are logged to the console.</li>
+	<li>The number of y-axis ticks has been set to equal the maximum character frequency, thereby ensuring that we only display integer counts along the y-axis (and not decimal counts).</li>
+	<li>I have added gridlines along the y-axis for ease of comparison among different character counts.</li>
+	<li>Vowels are colored differently from consonants.  The colors selected to distinguish vowels from consonants were selected using colorbrewer to avoid over-emphasizing one category over the other.</li>
+	<li>The user has the option to sort the bars either by frequency or be alphabetical order.  By default, the results are sorted alphabetically.</li>
+	<li>The title of the plot is set to equal the decoded query string.</li>
 </ul>
 
-<h2 class="header">Discussion</h2>
+<h3 class="header">B-level Functionality</h3>
+<ul>
+	<li>The user can use the checkbox in the top-right corner to specify whether the bars should be sorted alphabetically or by value.</li>
+	<li>The search box in the top-left corner can be used instead of the page URL to accept user input for query strings.  This functionality has been set up such that the user can use either the page URL or the search box; the webpage can accept input from both.</li>
+</ul>
+
+<h3 class="header">A-level Functionality</h3>
+<ul>
+	<li>At the start of the visualization, bars are shown one at a time, with each bar set to grow smoothly from the bottom up to its value.  Note that if the 'sort by value' checkbox is checked before all of the bars are displayed, the bars will stop growing and will be set to the values when the checkbox was checked.</li>
+</ul>
+</div>
+
+
+
+<div class="row">
+<h2 class="page-header" align="center">Discussion</h2>
 <p>I've implemented a simple bar chart that takes in some query string, strips away any non-alphabetical characters, and normalizes all letters to lowercase before plotting a bar chart of the letter frequencies.  First and foremost, I wanted to created an intuitive graphic for viewers to see the word counts, so I changed the number of y-axis ticks to match the maximum letter frequency.  In this way, the viewer would only see integer values on the y-axis, which makes sense; for example, it would not make sense to see 2.5 instances of the letter "a."  I also displayed the intial input string as the title such that there would be no confusion as to what the bar chart was displaying.</p>
-<p>To improve comparability among the different letter counts, I added gridlines the viewer can use as a reference.  In addition, I chose to color bars associated with vowels differently from bars associated with consonants.  In order to avoid accidentally emphasizing one color over the other, I used one of colorbrewer's qualitative color schemes when choosing the two different bar colors.  Furthermore, in order to highlight the particular bar that the viewer hovers their mouse over, I changed the hover-over color to black.</p>
-<p>In terms of interactivity, I added a checkbox to toggle the sort order of the bar chart.  When checked, the bars will be sorted by frequency, with the most frequent letters showing up on the lefthand side of the bar chart.  By default, the bars are displayed in alphabetical order.</p>
+
+<p>To improve comparability among the different letter counts, I added gridlines the viewer can use as a reference.  In addition, I chose to color bars associated with vowels differently from bars associated with consonants.  To avoid accidentally emphasizing one color over the other, I used one of colorbrewer's qualitative color schemes when choosing the two different bar colors.</p>
+
+<p>In terms of interactivity, I added a checkbox to toggle the sort order of the bar chart.  When checked, the bars will be sorted by frequency, with the most frequent letters showing up on the lefthand side of the bar chart.  By default, the bars are displayed in alphabetical order.  In addition, I included a search box which the user can use instead of the page URL in order to input query strings.  The script has been set-up to handle input from either the page URL or the search box, so the user does not need to worry about specifying which input method he/she decides to use.</p>
+</div>
 
 
 
+<hr/>
+
+<footer>
+    <p style="text-align: center;">Matt Shadish &bullet; MSAN 622 Information Visualization &bullet; Spring 2015</p>
+</footer>
 
 
 
