@@ -55,6 +55,37 @@ label {
 	display: none;
 }
 
+.d3-tip {
+	line-height: 1;
+	font-weight: bold;
+	width: 40px;
+	text-align: center;
+	padding: 4px;
+	background: rgba(0,0,0,0.8);
+	color: #fff;
+	border-radius: 2px;
+}
+
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
+
+
+
 </style>
 
 
@@ -63,6 +94,7 @@ label {
 <script src="js/d3.min.js"></script>
 <script src="js/jquery.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
+<script src="js/d3.tip.v0.6.3.js"></script>
 
 
 <header>
@@ -109,7 +141,7 @@ Query String:<br>
 
 <script>
 	// let's initialize some constants
-	var bar_raise_delay = 500;
+	var bar_raise_delay = 450;
 	var sort_shift_delay = 750;
 	// plot set up
 	var margin = {top: 40, right: 20, bottom: 30, left: 50},
@@ -130,6 +162,14 @@ Query String:<br>
 		.scale(y)
 		.orient('left');
 
+	// add the tooltip
+	var tip_obj = d3.tip()
+		.attr('class', 'd3-tip')
+		.offset([-7, 0])
+		.html(function(d) {
+			return "<span style='color:white'>" + d.value + "</span>";
+		});
+
 
 
 	// initialize our svg
@@ -138,6 +178,10 @@ Query String:<br>
 		.attr('height', height + margin.top + margin.bottom)
 	.append('g')
 		.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+
+	// call the tooltip
+	svg.call(tip_obj);
 
 
 
@@ -205,10 +249,13 @@ Query String:<br>
 
 
 	// now the callback functions
-	x.domain(d3List.map(function(i) {return i.key;}));
-	y.domain([0, d3.max(d3List, function(j) {return j.value;})]);
+	// set how many y-axis tickmarks we want
+	var max_y = d3.max(d3List, function(i) {return i.value;});
 
-	yAxis.ticks((d3.max(d3List, function(k) {return k.value;})));
+	x.domain(d3List.map(function(i) {return i.key;}));
+	y.domain([0, max_y]);
+
+	yAxis.ticks(max_y <= 10 ? max_y : 10);
 
 
 	// add x-axis stuff
@@ -223,7 +270,7 @@ Query String:<br>
 		.call(yAxis)
 	.append('text')
 		.attr('transform', 'rotate(-90)')
-		.attr('y', 0 - margin.left)
+		.attr('y', 5 - margin.left)
 		.attr('x', 0 - ((height - margin.top - margin.bottom) / 2))
 		.attr('dy', '.71em')
 		.style('text-anchor', 'end')
@@ -254,6 +301,7 @@ Query String:<br>
 	bars.attr('fill', function(a) {return ((/^[aeiou]$/g).test(a.key) ? '#33a02c':'#1f78b4'); });
 
 
+
 	// here is the transition
 	bars.transition().duration(bar_raise_delay)
 		.delay(function(x) {return d3List.indexOf(x) * bar_raise_delay;})
@@ -261,12 +309,15 @@ Query String:<br>
 		.attr("y", function(b) {return y(b.value);})
 		.attr("height", function(c) {return height - y(c.value);});
 
+	bars.on('mouseover', tip_obj.show)
+		.on('mouseout', tip_obj.hide);
+
 
 
 	// let's add a title
 	svg.append('text')
 		.attr('x', (width / 2))
-		.attr('y', 0 - (margin.top / 2))
+		.attr('y', 0 - (margin.top/2))
 		.attr('text-anchor', 'middle')
 		.attr('font-size', '20px')
 		.text(input_query_extracted);
@@ -313,7 +364,7 @@ Query String:<br>
 	<li>Once the query string has been read in (either from the page URL or the search box), it is decoded and converted to lowercase.</li>
 	<li>The letter counts are stored in a dictionary named 'bar_dict'.</li>
 	<li>The decoded text as well as the letter counts are logged to the console.</li>
-	<li>The number of y-axis ticks has been set to equal the maximum character frequency, thereby ensuring that we only display integer counts along the y-axis (and not decimal counts).</li>
+	<li>The number of y-axis ticks has been set to equal the maximum character frequency, up to 10 ticks.  Beyond 10 ticks, the script will try its best to keep the tick count to approximately 10.  By setting this constraint, I wanted to avoid displaying every tick mark, which causes clutter when the maximum letter count grows large enough (e.g. 100).</li>
 	<li>I have added gridlines along the y-axis for ease of comparison among different character counts.</li>
 	<li>Vowels are colored differently from consonants.  The colors selected to distinguish vowels from consonants were selected using colorbrewer to avoid over-emphasizing one category over the other.</li>
 	<li>The user has the option to sort the bars either by frequency or be alphabetical order.  By default, the results are sorted alphabetically.</li>
@@ -324,6 +375,7 @@ Query String:<br>
 <ul>
 	<li>The user can use the checkbox in the top-right corner to specify whether the bars should be sorted alphabetically or by value.</li>
 	<li>The search box in the top-left corner can be used instead of the page URL to accept user input for query strings.  This functionality has been set up such that the user can use either the page URL or the search box; the webpage can accept input from both.</li>
+	<li>Because there may not necessarily be a gridline for every possible count value, I added a mouse-over tooltip that lets the user see the exact letter count.</li>
 </ul>
 
 <h3 class="header">A-level Functionality</h3>
@@ -336,9 +388,9 @@ Query String:<br>
 
 <div class="row">
 <h2 class="page-header" align="center">Discussion</h2>
-<p>I've implemented a simple bar chart that takes in some query string, strips away any non-alphabetical characters, and normalizes all letters to lowercase before plotting a bar chart of the letter frequencies.  First and foremost, I wanted to created an intuitive graphic for viewers to see the word counts, so I changed the number of y-axis ticks to match the maximum letter frequency.  In this way, the viewer would only see integer values on the y-axis, which makes sense; for example, it would not make sense to see 2.5 instances of the letter "a."  I also displayed the intial input string as the title such that there would be no confusion as to what the bar chart was displaying.</p>
+<p>I've implemented a simple bar chart that takes in some query string, strips away any non-alphabetical characters, and normalizes all letters to lowercase before plotting a bar chart of the letter frequencies.  First and foremost, I wanted to created an intuitive graphic for viewers to see the letter counts, so I changed the number of y-axis ticks to match the maximum letter frequency (up to 10 tickmarks, at which point the plot will start skipping tickmarks so as to avoid cluttering the y-axis).  In this way, the viewer will only see integer values on the y-axis, which makes sense; for example, it would not make sense to see 2.5 instances of the letter "a."  I also displayed the intial input string as the title such that there would be no confusion as to what the bar chart was displaying.</p>
 
-<p>To improve comparability among the different letter counts, I added gridlines the viewer can use as a reference.  In addition, I chose to color bars associated with vowels differently from bars associated with consonants.  To avoid accidentally emphasizing one color over the other, I used one of colorbrewer's qualitative color schemes when choosing the two different bar colors.</p>
+<p>To improve comparability among the different letter counts, I added gridlines the viewer can use as a reference.  Of course, since not all of the gridlines are guaranteed to be displayed, I added a tooltip that allows the user to see the exact value associated with a given letter.  In addition, I chose to color bars associated with vowels differently from bars associated with consonants.  To avoid accidentally emphasizing one color over the other, I used one of colorbrewer's qualitative color schemes when choosing the two different bar colors.</p>
 
 <p>In terms of interactivity, I added a checkbox to toggle the sort order of the bar chart.  When checked, the bars will be sorted by frequency, with the most frequent letters showing up on the lefthand side of the bar chart.  By default, the bars are displayed in alphabetical order.  In addition, I included a search box which the user can use instead of the page URL in order to input query strings.  The script has been set-up to handle input from either the page URL or the search box, so the user does not need to worry about specifying which input method he/she decides to use.</p>
 </div>
