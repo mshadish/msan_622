@@ -12,6 +12,7 @@
 <script src="js/d3.min.js"></script>
 <script src="js/jquery.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
+<script src="js/d3.tip.v0.6.3.js"></script>
 
 
 
@@ -22,7 +23,58 @@
         padding-left: 30px;
         padding-right: 30px;
     }
+
+.dot {
+	stroke: #000;
+}
+
+
+.axis {
+	font: 18px sans-serif;
+}
+
+.axis path,
+.axis line {
+	fill: none;
+	stroke: #000;
+	shape-rendering: crispEdges;
+}
+
+
+.d3-tip {
+	line-height: 1;
+	font-weight: bold;
+	width: 120px;
+	text-align: center;
+	padding: 4px;
+	background: rgba(0,0,0,0.8);
+	color: #fff;
+	border-radius: 2px;
+}
+
+/*
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
+*/
+
 </style>
+
+
 
 
 <nav class="navbar navbar-inverse navbar-fixed-top">
@@ -55,6 +107,176 @@
 
 <body>
 
+
+
+
+
+
+
+
+
+
+
+<script>
+	// here are the variables we will want to plot as x, y, r
+	var x_name = 'illiteracy';
+	var y_name = 'murder';
+	var r_name = 'population';
+
+	var max_radius = 30;
+
+	// let's initialize some constants here
+	var margin = {top: 40, right: 20, bottom: 30, left: 70};
+	var width = 960 - margin.left - margin.right - 2*max_radius;
+	var height = 500 - margin.top - margin.bottom - 2*max_radius;
+
+	// set the scalings
+	var xScale = d3.scale.linear()
+		.range([0, width]);
+	var yScale = d3.scale.linear()
+		.range([height, 0]);
+	var radiusScale = d3.scale.sqrt()
+		.range([0, max_radius]);
+	var colorScale = d3.scale.category10();
+
+	// and make the x- and y-axis calls
+	var xAxis = d3.svg.axis()
+		.scale(xScale)
+		.orient('bottom');
+	var yAxis = d3.svg.axis()
+		.scale(yScale)
+		.orient('left');
+
+
+	// make the svg object
+	var svg = d3.select('body').append('svg')
+		.attr('width', width + margin.left + margin.right)
+		.attr('height', height + margin.top + margin.bottom)
+	.append('g')
+		.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+
+	// add the tooltip
+	var tip_obj = d3.tip()
+		.attr('class', 'd3-tip')
+		.offset([max_radius * 3, max_radius * 3])
+		.html(function(d) {
+			return "<span style='color:white'>State: " + d['state_abb']
+			+ "<br>Income: " + d['income']
+			+ "<br>Life Exp: " + d['life_exp']
+			+ "<br>HS Grad: " + d['hs_grad']
+			+ "<br>Frost: " + d['frost']
+			+ "<br>Area: " + d['area']
+			+ "</span>";
+		});
+
+
+
+
+	// call the tip object
+	svg.call(tip_obj);
+
+
+	// initialize the data variable
+	var data_set;
+
+
+	// and read in the data to produce the visualization
+	d3.json('data/state.json', function(error, json) {
+		if (error) return console.warn(error);
+		data_set = json;
+		produceVisualization();
+	});
+	
+
+	function produceVisualization() {
+		var max_x = d3.max(data_set, function(i) {return i[x_name]; });
+		var max_y = d3.max(data_set, function(i) {return i[y_name]; });
+		var max_rad = d3.max(data_set, function(i) {return i[r_name]; });
+
+		// let's pull out the distinct states
+		var states = [];
+		for (i = 0; i < data_set.length; i++) {
+			if (states.indexOf(data_set[i]['state_region']) === -1) {
+				states.push(data_set[i]['state_region']);
+			}
+		}
+
+		// adjust our scaling domains accordingly
+		xScale.domain([0, max_x]);
+		yScale.domain([0, max_y]);
+		radiusScale.domain([0, max_rad]);
+		colorScale.domain(states);
+
+
+
+		// x-axis
+		svg.append('g')
+			.attr('class', 'x axis')
+			.attr('transform', 'translate(0,' + height + ')')
+			.call(xAxis)
+		.append('text')
+			.attr('x', width)
+			.attr('y', -20)
+			.attr('dy', '.71em')
+			.style('text-anchor', 'end')
+			.text(x_name.charAt(0).toUpperCase() + x_name.substr(1));
+
+		// y-axis
+		svg.append('g')
+			.attr('class', 'y axis')
+			.call(yAxis)
+		.append('text')
+			.attr('x', 30)
+			.attr('y', -5)
+			.style('text-anchor', 'end')
+			.text(y_name.charAt(0).toUpperCase() + y_name.substr(1));
+
+
+
+		
+		// now let's add the datapoints to our svg element
+		var dots = svg.append('g')
+			.attr('class', 'dots')
+			.selectAll('.dot')
+			.data(data_set)
+			.enter()
+			.append('circle')
+			.attr('class', 'dot')
+			// x-position
+			.attr('cx', function(x) {
+				return xScale(x[x_name]);
+			})
+			// y-position
+			.attr('cy', function(y) {
+				return yScale(y[y_name]);
+			})
+			// radius
+			.attr('r', function(r) {
+				return radiusScale(r[r_name]);
+			})
+			// color
+			.attr('fill', function(c) {return colorScale(c['state_region']);});
+
+
+		dots.on('mouseover', tip_obj.show)
+			.on('mouseout', tip_obj.hide);
+
+
+	}
+
+
+
+
+
+
+</script>
+
+<hr/>
+
+
+
+<!-- 
 <div class="row">
 	<h2 class="page-header" align="center">Matt Shadish</h2>
 	<div align="center">
@@ -77,30 +299,14 @@
 <h3 class="header">Advanced Functionality</h3>
 <ul>
 </ul>
-</div>
+</div> -->
 
 
-
-
-
-
-
-
-
-
-
-<script>
-
-
-
-</script>
-
-
-<hr/>
+<!-- <hr/>
 
 <footer>
     <p style="text-align: center;">Matt Shadish &bullet; MSAN 622 Information Visualization &bullet; Spring 2015</p>
 </footer>
-
+ -->
 
 </body>
