@@ -41,6 +41,14 @@
 }
 
 
+.legend {
+            padding: 5px;
+            font: 14px sans-serif;
+            background: yellow;
+            box-shadow: 2px 2px 1px #888;
+        }
+
+
 .d3-tip {
 	line-height: 1;
 	font-weight: bold;
@@ -155,11 +163,20 @@
 	.append('g')
 		.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
+	// make the title
+	svg.append('text')
+		.attr('x', width / 2)
+		.attr('y', margin.top / 2)
+		.attr('text-anchor', 'middle')
+		.style('font-size', '20px')
+		.style('text-decoration', 'underline')
+		.text('US State Data');
+
 
 	// add the tooltip
 	var tip_obj = d3.tip()
 		.attr('class', 'd3-tip')
-		.offset([max_radius * 3, max_radius * 3])
+		.offset([max_radius * 3, -max_radius * 3])
 		.html(function(d) {
 			return "<span style='color:white'>State: " + d['state_abb']
 			+ "<br>Income: " + d['income']
@@ -170,6 +187,10 @@
 			+ "</span>";
 		});
 
+
+	// add the legend
+	var legend = svg.append("g")
+		.attr('class', 'legend');
 
 
 
@@ -195,10 +216,10 @@
 		var max_rad = d3.max(data_set, function(i) {return i[r_name]; });
 
 		// let's pull out the distinct states
-		var states = [];
+		var state_regions = [];
 		for (i = 0; i < data_set.length; i++) {
-			if (states.indexOf(data_set[i]['state_region']) === -1) {
-				states.push(data_set[i]['state_region']);
+			if (state_regions.indexOf(data_set[i]['state_region']) === -1) {
+				state_regions.push(data_set[i]['state_region']);
 			}
 		}
 
@@ -206,7 +227,7 @@
 		xScale.domain([0, max_x]);
 		yScale.domain([0, max_y]);
 		radiusScale.domain([0, max_rad]);
-		colorScale.domain(states);
+		colorScale.domain(state_regions);
 
 
 
@@ -261,6 +282,29 @@
 
 		dots.on('mouseover', tip_obj.show)
 			.on('mouseout', tip_obj.hide);
+
+		
+		// add features to the legend
+		legend.selectAll('rect')
+			.data(state_regions)
+			.enter()
+			.append('g')
+			.each(function(d,i) {
+				var g = d3.select(this);
+				g.append('rect')
+				.attr('x', width - 100)
+				.attr('y', height - 75 - (i * 25))
+				.attr('width', 10)
+				.attr('height', 10)
+				.style('fill', colorScale(d));
+
+				g.append('text')
+				.attr('x', width - 80)
+				.attr('y', height - 75 - (i * 25) + 8)
+				.attr('height', 30)
+				.attr('width', 100)
+				.text(d);
+			});
 
 
 	}
