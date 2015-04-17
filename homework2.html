@@ -42,6 +42,27 @@
 	opacity: 0.1;
 }
 
+
+.background path {
+  fill: none;
+  stroke: #ccc;
+  stroke-opacity: .4;
+  shape-rendering: crispEdges;
+}
+
+.brush .extent {
+  fill-opacity: .3;
+  stroke: #fff;
+  shape-rendering: crispEdges;
+}
+
+.foreground path {
+  fill: none;
+  stroke: steelblue;
+  stroke-opacity: .7;
+}
+
+
 .frame {
   fill: none;
   stroke: #aaa;
@@ -124,12 +145,13 @@
 	d3.json('data/state.json', function(error, json) {
 		if (error) return console.warn(error);
 		data_set = json;
-		genBubblePlot();
-		genScatterMatrix();
+		genBubblePlot(data_set);
+		genScatterMatrix(data_set);
+		genParallelPlot(data_set);
 	});
 	
 
-	function genBubblePlot() {
+	function genBubblePlot(data_set) {
 		// here are the variables we will want to plot as x, y, r
 		var x_name = 'illiteracy';
 		var y_name = 'murder';
@@ -173,8 +195,8 @@
 			.attr('y', -margin.top / 2)
 			.attr('text-anchor', 'middle')
 			.style('font-size', '20px')
-			.style('text-decoration', 'underline')
-			.text('US State Data');
+		//	.style('text-decoration', 'underline')
+			.text('US State Data, Illiteracy vs. Murder Rates');
 
 
 		// add the tooltip
@@ -301,7 +323,7 @@
 	}
 
 
-	function genScatterMatrix() {
+	function genScatterMatrix(data_set) {
 		//
 		var margin = {top: 40, right: 0, bottom: 30, left: 70};
 		//var width = 960 - margin.left - margin.right;
@@ -359,7 +381,7 @@
 			.attr('y', -margin.top / 2)
 			.attr('text-anchor', 'middle')
 			.style('font-size', '20px')
-			.style('text-decoration', 'underline')
+		//	.style('text-decoration', 'underline')
 			.text('US State Data, Scatter Matrix');
 
 
@@ -435,6 +457,165 @@
 		        .style("fill", function(d) { return color(d['state_region']); });
 		} 
 		} // end of generating the scatter matrix
+
+
+		function genParallelPlot(data_set) {
+			var margin = {top: 80, left: 10, bottom: 10, right: 10};
+			var width = 1100 - margin.left - margin.right;
+			var height = 500 - margin.top - margin.bottom;
+
+
+			var x = d3.scale.ordinal().rangePoints([0, width], 1);
+			var y = {};
+			var dragging = {};
+
+
+			var line = d3.svg.line();
+			var axis = d3.svg.axis().orient("left");
+			var background;
+			var foreground;
+
+
+			var svg = d3.select("body").append("svg")
+			    .attr("width", width + margin.left + margin.right)
+			    .attr("height", height + margin.top + margin.bottom)
+			  .append("g")
+			    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+			// make the title
+			svg.append('text')
+				.attr('x', width / 2)
+				.attr('y', -margin.top / 2)
+				.attr('text-anchor', 'middle')
+				.style('font-size', '20px')
+			//	.style('text-decoration', 'underline')
+				.text('US State Data, Parallel Coordinates');
+
+
+			  // Extract the list of dimensions and create a scale for each.
+			  //x.domain(dimensions = d3.keys(data_set[0])
+			  // i've manually listed out the fields so that I can control the order in which the fields
+			  // appear in my parallel plot
+			  x.domain(dimensions = ['area','population','hs_grad','life_exp','income','illiteracy','murder','frost']
+			  	.filter(function(d) {
+			    	return (d != "state_name" && d != "state_abb" && d != "state_region" && d != "state_division")
+			  			&& (y[d] = d3.scale.linear().domain(d3.extent(data_set.map(function(i) {return i[d];})))
+			  				.range([height, 0]));
+
+
+			  }));
+
+
+
+
+			  // Add grey background lines for context.
+			  background = svg.append("g")
+			      .attr("class", "background")
+			    .selectAll("path")
+			      .data(data_set)
+			    .enter().append("path")
+			      .attr("d", path);
+
+			  // Add blue foreground lines for focus.
+			  foreground = svg.append("g")
+			      .attr("class", "foreground")
+			    .selectAll("path")
+			      .data(data_set)
+			    .enter().append("path")
+			      .attr("d", path);
+
+			  // Add a group element for each dimension.
+			  var g = svg.selectAll(".dimension")
+			      .data(dimensions)
+			    .enter().append("g")
+			      .attr("class", "dimension")
+			      .attr("transform", function(d) { return "translate(" + x(d) + ")"; })
+			      .call(d3.behavior.drag()
+			        .on("dragstart", function(d) {
+			          dragging[d] = this.__origin__ = x(d);
+			          background.attr("visibility", "hidden");
+			        })
+			        .on("drag", function(d) {
+			          dragging[d] = Math.min(width, Math.max(0, this.__origin__ += d3.event.dx));
+			          foreground.attr("d", path);
+			          dimensions.sort(function(a, b) { return position(a) - position(b); });
+			          x.domain(dimensions);
+			          g.attr("transform", function(d) { return "translate(" + position(d) + ")"; })
+			        })
+			        .on("dragend", function(d) {
+			          delete this.__origin__;
+			          delete dragging[d];
+			          transition(d3.select(this)).attr("transform", "translate(" + x(d) + ")");
+			          transition(foreground)
+			              .attr("d", path);
+			          background
+			              .attr("d", path)
+			              .transition()
+			              .delay(500)
+			              .duration(0)
+			              .attr("visibility", null);
+			        }));
+
+			  // Add an axis and title.
+			  g.append("g")
+			      .attr("class", "axis")
+			      .each(function(d) { d3.select(this).call(axis.scale(y[d])); })
+			    .append("text")
+			      .attr("text-anchor", "middle")
+			      .attr("y", -9)
+			      .text(function(String) {
+			      	if (String === 'hs_grad') {
+			      		return 'HS Grad';
+			      	}
+			      	else if (String === 'life_exp') {
+			      		return 'Life Exp';
+			      	}
+			      	else {
+				      	return String.charAt(0).toUpperCase() + String.substr(1);
+			      }
+			      });
+
+			  // Add and store a brush for each axis.
+			  g.append("g")
+			      .attr("class", "brush")
+			      .each(function(d) { d3.select(this).call(y[d].brush = d3.svg.brush().y(y[d]).on("brushstart", brushstart).on("brush", brush)); })
+			    .selectAll("rect")
+			      .attr("x", -8)
+			      .attr("width", 16);
+			
+
+			function position(d) {
+			  var v = dragging[d];
+			  return v == null ? x(d) : v;
+			}
+
+			function transition(g) {
+			  return g.transition().duration(500);
+			}
+
+			// Returns the path for a given data point.
+			function path(d) {
+			  return line(dimensions.map(function(p) { return [position(p), y[p](d[p])]; }));
+			}
+
+			// When brushing, don’t trigger axis dragging.
+			function brushstart() {
+			  d3.event.sourceEvent.stopPropagation();
+			}
+
+			// Handles a brush event, toggling the display of foreground lines.
+			function brush() {
+			  var actives = dimensions.filter(function(p) { return !y[p].brush.empty(); }),
+			      extents = actives.map(function(p) { return y[p].brush.extent(); });
+			  foreground.style("display", function(d) {
+			    return actives.every(function(p, i) {
+			      return extents[i][0] <= d[p] && d[p] <= extents[i][1];
+			    }) ? null : "none";
+			  });
+			}
+
+// end gen parallel coordinate plot
+		}
 
 
 	function cross(a, b) {
