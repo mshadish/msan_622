@@ -58,7 +58,6 @@
 
 .foreground path {
   fill: none;
-  stroke: steelblue;
   stroke-opacity: .7;
 }
 
@@ -96,6 +95,10 @@
 
 
 
+<body>
+
+
+
 <nav class="navbar navbar-inverse navbar-fixed-top">
     <div class="container">
         <div class="navbar-header">
@@ -112,24 +115,59 @@
             <ul class="nav navbar-nav">
                 <li><a href="index.html#homework">Homework</a></li>
                 <li><a href="index.html#project">Project</a></li>
-                <li><a href="index.html#participation">Participation</a></li>
             </ul>
 
             <ul class="nav navbar-nav navbar-right">
                 <li><a href="index.html#about">About</a></li>
                 <li><a href="index.html#contact">Contact</a></li>
             </ul>
-        </div><!--/.nav-collapse -->
+        </div>
     </div>
 </nav>
 
 
-<body>
 
 
 
+<div class="row">
+	<h2 class="header" align="center">Matt Shadish</h3>
+	<h4 class="header" align="center">Source Code: <a href="https://github.com/mshadish/msan_622">github.com/mshadish/msan_622</a></h3>
+</div>
+<hr/>
 
 
+<div class="row">
+<h3 class="header">Basic Functionality: Bubble Chart</h3>
+<ul>
+	<li>Bubble radius is scaled by the square root of the population of each state</li>
+	<li>Bubbles are colored by region (North Central, Northeast, West, and South)</li>
+	<li>Colors were chosen using colorbrewer's qualitative color scheme</li>
+	<li>Tooltip to display other features besides illiteracy and murder rates</li>
+</ul>
+</div>
+<br>
+<div class="a"></div>
+<hr/>
+
+
+<h3 class="header">Moderate Functionality: Scatterplot Matrix</h3>
+<ul>
+	<li>Eliminated redundancy of plots by only showing half of the entire scatterplot matrix</li>
+	<li>Points are color-coded by region, with colors chosen in the same way as previously (using colorbrewer)</li>
+	<li>The x-axis numbers are slightly rotated in order to prevent interference among labels</li>
+</ul>
+<br>
+<div class="b"></div>
+<hr/>
+
+
+<h3 class="header">Advanced Functionality: Parallel Coordinates</h3>
+<ul>
+	<li>Added a state region ordinal axis to demonstrate the mapping of color to state region</li>
+	<li>Categorical colors were determined using colorbrewer</li>
+</ul>
+<br>
+<div class="c"></div>
 
 
 
@@ -171,7 +209,7 @@
 			.range([height, 0]);
 		var radiusScale = d3.scale.sqrt()
 			.range([0, max_radius]);
-		var colorScale = d3.scale.category10();
+		var colorScale = d3.scale.ordinal().range(['#66c2a5','#fc8d62','#8da0cb','#e78ac3']);
 
 		// and make the x- and y-axis calls
 		var xAxis = d3.svg.axis()
@@ -183,7 +221,7 @@
 
 
 		// make the svg object
-		var svg = d3.select('body').append('svg')
+		var svg = d3.select('div.a').append('svg')
 			.attr('width', width + margin.left + margin.right)
 			.attr('height', height + margin.top + margin.bottom)
 		.append('g')
@@ -270,13 +308,18 @@
 
 
 
+			// Defines a sort order so that the smallest dots are drawn on top.
+			function order(a, b) {
+			  return b[r_name] - a[r_name];
+			}
+
 			
 			// now let's add the datapoints to our svg element
 			var dots = svg.append('g')
 				.attr('class', 'dots')
 				.selectAll('.dot')
 				.data(data_set)
-				.enter()
+			.enter()
 				.append('circle')
 				.attr('class', 'dot')
 				// x-position
@@ -292,7 +335,8 @@
 					return radiusScale(r[r_name]);
 				})
 				// color
-				.attr('fill', function(c) {return colorScale(c['state_region']);});
+				.attr('fill', function(c) {return colorScale(c['state_region']);})
+				.sort(order);
 
 
 			dots.on('mouseover', tip_obj.show)
@@ -320,13 +364,13 @@
 					.attr('width', 100)
 					.text(d);
 				});
+
 	}
 
 
 	function genScatterMatrix(data_set) {
 		//
 		var margin = {top: 40, right: 0, bottom: 30, left: 70};
-		//var width = 960 - margin.left - margin.right;
 
 
 		var size = 120;
@@ -350,7 +394,7 @@
 		    .orient("left")
 		    .ticks(3);
 
-		var color = d3.scale.category10();
+		var color = d3.scale.ordinal().range(['#66c2a5','#fc8d62','#8da0cb','#e78ac3']);
 
 		var fields = ['population','income','illiteracy','life_exp','murder',
 					  'hs_grad','frost','area'];
@@ -367,7 +411,7 @@
 		xAxis.tickSize(size * n);
 		yAxis.tickSize(-size * n);
 
-		var svg = d3.select("body").append("svg")
+		var svg = d3.select("div.b").append("svg")
 			.attr("width", 1100)
 		    .attr("height", 1100)
 		    .style('padding', 50)
@@ -382,7 +426,7 @@
 			.attr('text-anchor', 'middle')
 			.style('font-size', '20px')
 		//	.style('text-decoration', 'underline')
-			.text('US State Data, Scatter Matrix');
+			.text('US State Data, Scatterplot Matrix');
 
 
 		// add the x-axis
@@ -460,7 +504,8 @@
 
 
 		function genParallelPlot(data_set) {
-			var margin = {top: 80, left: 10, bottom: 10, right: 10};
+
+			var margin = {top: 80, left: 50, bottom: 10, right: 10};
 			var width = 1100 - margin.left - margin.right;
 			var height = 500 - margin.top - margin.bottom;
 
@@ -469,6 +514,8 @@
 			var y = {};
 			var dragging = {};
 
+			var colorScale = d3.scale.ordinal().range(['#66c2a5','#fc8d62','#8da0cb','#e78ac3']);
+
 
 			var line = d3.svg.line();
 			var axis = d3.svg.axis().orient("left");
@@ -476,11 +523,12 @@
 			var foreground;
 
 
-			var svg = d3.select("body").append("svg")
+			var svg = d3.select("div.c").append("svg")
 			    .attr("width", width + margin.left + margin.right)
 			    .attr("height", height + margin.top + margin.bottom)
+			    .style('padding', 30)
 			  .append("g")
-			    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+			    .attr("transform", "translate(" + margin.left + "," + 40 + ")");
 
 			// make the title
 			svg.append('text')
@@ -488,18 +536,20 @@
 				.attr('y', -margin.top / 2)
 				.attr('text-anchor', 'middle')
 				.style('font-size', '20px')
-			//	.style('text-decoration', 'underline')
 				.text('US State Data, Parallel Coordinates');
 
 
 			  // Extract the list of dimensions and create a scale for each.
-			  //x.domain(dimensions = d3.keys(data_set[0])
 			  // i've manually listed out the fields so that I can control the order in which the fields
 			  // appear in my parallel plot
-			  x.domain(dimensions = ['area','population','hs_grad','life_exp','income','illiteracy','murder','frost']
+			  x.domain(dimensions = ['state_region','area','population','hs_grad','life_exp','income','illiteracy','murder','frost'
+			  						 ]
 			  	.filter(function(d) {
-			    	return (d != "state_name" && d != "state_abb" && d != "state_region" && d != "state_division")
-			  			&& (y[d] = d3.scale.linear().domain(d3.extent(data_set.map(function(i) {return i[d];})))
+			    	return (d != "state_name" && d != "state_abb" && d != 'state_division')
+			  			&& (d === 'state_region' ?
+			  				y[d] = d3.scale.ordinal().domain(data_set.map(function(i) {return i[d];}).sort()).rangePoints([0, height])
+			  				:
+			  				y[d] = d3.scale.linear().domain(d3.extent(data_set.map(function(i) {return i[d];})))
 			  				.range([height, 0]));
 
 
@@ -522,7 +572,9 @@
 			    .selectAll("path")
 			      .data(data_set)
 			    .enter().append("path")
-			      .attr("d", path);
+			      .attr("d", path)
+			      .style('stroke', function(d) {return colorScale(d['state_region']);
+			  });
 
 			  // Add a group element for each dimension.
 			  var g = svg.selectAll(".dimension")
@@ -569,6 +621,9 @@
 			      	}
 			      	else if (String === 'life_exp') {
 			      		return 'Life Exp';
+			      	}
+			      	else if (String === 'state_region') {
+			      		return 'State Region';
 			      	}
 			      	else {
 				      	return String.charAt(0).toUpperCase() + String.substr(1);
@@ -642,41 +697,31 @@
 
 
 
-<hr/>
+
+
+</div>
+</body>
 
 
 
-<!-- 
+ 
 <div class="row">
-	<h2 class="page-header" align="center">Matt Shadish</h2>
-	<div align="center">
-		<a href="https://github.com/mshadish/msan_622">Source Code</a>
+	<h2 class="page-header" align="center">Summary</h2>
+	<div align="left">
+		<p>I first generated a bubble plot to display the features associated with all 50 states.  The x-axis represents the illiteracy rate, and the y-axis represents the murder rate.  Each bubble's color is based on its state region (which I have explained in a legend), and each bubble's radius has been scaled to the square root of the country's population.  Note that, had I scaled the radius linearly, the area would have exploded squaredly.  To display the rest of the features associated with each state, I added a tool-tip that pops up to the left of each bubble when the user hovers over a particular data point.</p>
+		<p>Next, I created a scatterplot matrix to show how the features compare among one another.  Although a scatterplot matrix would generally fill the entire <i>p</i> x <i>p</i> grid (where p represents the number of numerical features), nearly half of the entries would be duplicated.  As an example, there would be two plots showing life expectancy vs. population: one in which (x = life expectancy, y = population) and another in which (x = population, y = life expectancy).  Therefore, I only displayed the plots as a lower-triangular matrix.  I felt that the corresponding decrease in data density was outweighed by the increase in the data-ink ratio.  On a separate note, I rotated the x-axis labels in order to prevent the labels from over-writing each other.  I also color-coded each data point in the same way the points are colored in the bubble plot.</p>
+		<p>Finally, I created a relatively simple parallel coordinate plot.  With the exception of the categorical feature "state region," all of the columns allow for brushing.  In the case of state region, this was added simply to serve as a legend that maps a given color to its state region.</p>
+		<p>One final note: the four colors used to represent the four regions across the three plots were chosen using one of colorbrewer's qualitative color schemes.</p>
 	</div>
 </div>
 
 
 
-<div class="row">
-<h2 class="page-header" align="center">Functionality</h2>
-<h3 class="header">Basic Functionality</h3>
-<ul>
-</ul>
 
-<h3 class="header">Moderate Functionality</h3>
-<ul>
-</ul>
-
-<h3 class="header">Advanced Functionality</h3>
-<ul>
-</ul>
-</div> -->
-
-
-<!-- <hr/>
+<hr/>
 
 <footer>
     <p style="text-align: center;">Matt Shadish &bullet; MSAN 622 Information Visualization &bullet; Spring 2015</p>
 </footer>
- -->
 
 </body>
