@@ -1,0 +1,360 @@
+<!-- Matt Shadish -->
+
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+
+
+<script src="js/d3.min.js"></script>
+<!-- <script src="http://d3js.org/d3.v3.min.js"></script> -->
+<script src="js/d3.v3.js"></script>
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/d3.tip.v0.6.3.js"></script>
+
+
+
+<style type="text/css">
+body {
+    padding-top: 80px;
+    padding-bottom: 20px;
+    padding-left: 30px;
+    padding-right: 30px;
+    font: 16px sans-serif;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+
+
+.line {
+    fill: none;
+}
+
+
+
+</style>
+
+
+
+<body>
+
+
+
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle Navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="index.html">MSAN 622</a>
+        </div>
+
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li><a href="index.html#homework">Homework</a></li>
+                <li><a href="index.html#project">Project</a></li>
+                <li><a href="index.html#participation">Participation</a></li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="index.html#about">About</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+
+<div class="a" align="center"></div>
+
+<hr/>
+
+
+<div class="b" align="center"></div>
+
+
+
+
+<script>
+    // initialize the data set variable
+    var data_set;
+    // and initialize the date parsing function
+    parseDate = d3.time.format('%b %Y').parse;
+
+
+
+    // now we'll read in the data and call the plotting functions
+    d3.json('data/seatbelts.json', function(error, json) {
+        if (error) return console.warn(error);
+
+        data_set = json;
+        // convert the dates
+        data_set.forEach(function(c) {
+            c['_row'] = parseDate(c['_row']);
+        });
+        // and plot
+        genStackedAreaChart(data_set);
+        genMultilineChart(data_set);
+    });
+
+
+    // define the function to create the area chart
+    function genStackedAreaChart(data) {
+        // we'll plot the stacked area chart of the drivers killed and van drivers killed
+        fields = ['DriversKilled', 'VanKilled'];
+
+        // initialize the margins
+        var margin = {top: 40, right: 20, bottom: 80, left: 50};
+        var width = 960 - margin.left - margin.right;
+        var height = 500 - margin.top - margin.bottom;
+
+        // initialize our x, y, and colors
+        var x = d3.time.scale().range([0, width]);
+        var y = d3.scale.linear().range([height, 0]);
+        var color = d3.scale.category10();
+        // initialize the xAxis and yAxis callback functions
+        var xAxis = d3.svg.axis()
+            .scale(x)
+            .orient('bottom');
+        var yAxis = d3.svg.axis()
+            .scale(y)
+            .orient('left');
+
+        // let's also initialize the area and stacking functions
+        var area = d3.svg.area()
+            .x(function(d) {return x(d['date']); })
+            .y0(function(d) {return y(d.y0); })
+            .y1(function(d) {return y(d.y0 + d.y); });
+        var stack = d3.layout.stack()
+            .values(function(d) {return d.values; });
+
+        // create the svg object
+        var svg = d3.select('div.a').append('svg')
+            .attr('width', width + margin.left + margin.right)
+            .attr('height', height + margin.top + margin.bottom)
+        .append('g')
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+
+        // now we're ready to start working with the data
+        // set the color domain
+        color.domain(["DriversKilled", "VanKilled"]);
+
+        var browsers = stack(color.domain().map(function(name) {
+            return {
+                name: name,
+                values: data.map(function(e) {
+                    return {date: e['_row'], y: e[name]};
+                })
+            };
+        }));
+
+        x.domain(d3.extent(data, function(i) {return i['_row']; }));
+        y.domain([0, d3.max(data, function(j) {return j['DriversKilled'] + j['VanKilled'];})]);
+
+        
+        // enter the data
+        var browser = svg.selectAll('.browser')
+            .data(browsers)
+        .enter().append('g')
+            .attr('class', 'browser');
+
+
+        browser.append('path')
+            .attr('class', 'area')
+            .attr('d', function(d) {return area(d.values); })
+            .style('fill', function(i) {return color(i.name); });
+
+        svg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis);
+
+
+        svg.append('g')
+            .attr('class', 'y axis')
+            .call(yAxis);
+
+        // FINALLY, LET'S ADD OUR TEXT
+        // x-axis
+        svg.append('g')
+            .attr('class', 'x axis')
+            .attr('transform', 'translate(0,' + height + ')')
+            .call(xAxis)
+        .append('text')
+            .attr('x', width/2)
+            .attr('y', 40)
+            .attr('dy', '.71em')
+            .style('text-anchor', 'end')
+            .text('Date');
+
+        // y-axis
+        svg.append('g')
+            .attr('class', 'y axis')
+            .call(yAxis)
+        .append('text')
+            .attr('x', 60)
+            .attr('y', 20)
+            .style('text-anchor', 'end')
+            .text('Deaths');
+
+        // title
+        svg.append('text')
+            .attr('x', width / 2)
+            .attr('y', -margin.top / 2)
+            .attr('text-anchor', 'middle')
+            .style('font-size', '20px')
+            .text('Car and Van Drivers Killed, 1969 - 1985');
+
+    }
+    // END OF STACKED AREA CHART FUNCTION
+
+
+
+    // define function to create the multiline chart
+    function genMultilineChart(data) {
+        // we'll plot the front and rear drivers killed/severely injured
+        fields = ['front', 'rear'];
+
+        // set the margins
+        var margin = {top: 40, right: 60, bottom: 80, left: 50};
+        var width = 960 - margin.left - margin.right;
+        var height = 500 - margin.top - margin.bottom;
+
+        // set the x and y scales as well as the color scale
+        var x = d3.time.scale().range([0, width]);
+        var y = d3.scale.linear().range([height, 0]);
+        var color = d3.scale.category10();
+
+
+        // x and y axis callback functions
+        var xAxis = d3.svg.axis()
+            .scale(x)
+            .orient('bottom');
+        var yAxis = d3.svg.axis()
+            .scale(y)
+            .orient('left');
+
+
+        // initialize the svg
+        var svg = d3.select('div.b').append('svg')
+            .attr('width', width + margin.left + margin.right)
+            .attr('height', height + margin.top + margin.bottom)
+        .append('g')
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+        // now initialize the svg line interpolation function
+        var line = d3.svg.line()
+            .interpolate('basis')
+            .x(function(a) {return x(a.date); })
+            .y(function(b) {return y(b.deaths); });
+
+
+        // set the color domain
+        color.domain(fields);
+
+
+
+        // set the variable for the front/rear
+        var passengers = color.domain().map(function(name) {
+            return {
+                name: name,
+                values: data.map(function(i) {
+                    return {date: i['_row'], deaths: +i[name]};
+                })
+            };
+        });
+
+        // set the x and y domains
+        x.domain(d3.extent(data, function(a) {return a['_row']; }));
+        y.domain([
+        //    d3.min(passengers, function(b) {return d3.min(b.values, function(c) {return c.deaths; }); }),
+        0,
+            d3.max(passengers, function(b) {return d3.max(b.values, function(c) {return c.deaths; }); })
+        ]);
+
+
+        var passenger = svg.selectAll('.passenger')
+            .data(passengers)
+        .enter().append('g')
+            .attr('class', 'passenger');
+
+        passenger.append('path')
+            .attr('class', 'line')
+            .attr('d', function(d) {return line(d.values); })
+            .style('stroke', function(d) {return color(d.name); });
+
+
+        // FINALLY, LET'S ADD OUR TEXT
+        // x-axis
+        svg.append('g')
+            .attr('class', 'x axis')
+            .attr('transform', 'translate(0,' + height + ')')
+            .call(xAxis)
+        .append('text')
+            .attr('x', width/2)
+            .attr('y', 40)
+            .attr('dy', '.71em')
+            .style('text-anchor', 'end')
+            .text('Date');
+
+        // y-axis
+        svg.append('g')
+            .attr('class', 'y axis')
+            .call(yAxis)
+        .append('text')
+            .attr('x', 120)
+            .attr('y', -10)
+            .style('text-anchor', 'end')
+            .text('Deaths/Serious Injuries');
+
+        // title
+        svg.append('text')
+            .attr('x', width / 2)
+            .attr('y', -margin.top / 2)
+            .attr('text-anchor', 'middle')
+            .style('font-size', '20px')
+            .text('Passengers Killed/Seriously Injured, 1969-1985');
+
+        // and the text accompanying each line
+        passenger.append('text')
+            .datum(function(a) {return {name: a.name, value: a.values[a.values.length - 1]}; })
+            .attr('transform', function(d) {return 'translate(' + x(d.value.date) + ',' + y(d.value.deaths) + ')'; })
+            .attr('x', 3)
+            .attr('dy', '.35em')
+            .text(function(b) {return b.name.charAt(0).toUpperCase() + b.name.substr(1); });
+
+
+    }
+    // END OF MULTI LINE CHART FUNCTION
+
+
+
+
+
+</script>
+
+
+
+
+
+<hr/>
+
+<footer>
+    <p style="text-align: center;">Matt Shadish &bullet; MSAN 622 Information Visualization &bullet; Spring 2015</p>
+</footer>
+
+</body>
