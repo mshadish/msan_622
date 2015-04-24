@@ -10,6 +10,7 @@
 
 
 <script src="js/d3.min.js"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
 <!-- <script src="http://d3js.org/d3.v3.min.js"></script> -->
 <script src="js/d3.v3.js"></script>
 <script src="js/jquery.min.js"></script>
@@ -37,6 +38,11 @@ body {
 
 .line {
     fill: none;
+}
+
+.overlay {
+    fill: none;
+    pointer-events: all;
 }
 
 
@@ -91,6 +97,7 @@ body {
 <script>
     // initialize the data set variable
     var data_set;
+    var passengers;
     // and initialize the date parsing function
     parseDate = d3.time.format('%b %Y').parse;
 
@@ -141,6 +148,10 @@ body {
         var stack = d3.layout.stack()
             .values(function(d) {return d.values; });
 
+
+
+
+
         // create the svg object
         var svg = d3.select('div.a').append('svg')
             .attr('width', width + margin.left + margin.right)
@@ -177,6 +188,34 @@ body {
             .attr('class', 'area')
             .attr('d', function(d) {return area(d.values); })
             .style('fill', function(i) {return color(i.name); });
+
+
+
+        // try adding a legend
+        var legend = svg.append('g')
+            .attr('class', 'legend');
+
+        legend.selectAll('rect')
+            .data(browsers).enter()
+        .append('g')
+            .each(function(d,i) {
+                var g = d3.select(this);
+                g.append('rect')
+                .attr('x', width - 100)
+                .attr('y', 50 - (i * 25))
+                .attr('width', 10)
+                .attr('height', 10)
+                .style('fill', color(d.name));
+
+                g.append('text')
+                .attr('x', width - 80)
+                .attr('y', 50 - (i * 25) + 8)
+                .attr('height', 30)
+                .attr('width', 100)
+                .text(d.name);
+            }
+        );
+
 
         svg.append("g")
             .attr("class", "x axis")
@@ -230,7 +269,7 @@ body {
         fields = ['front', 'rear'];
 
         // set the margins
-        var margin = {top: 40, right: 60, bottom: 80, left: 50};
+        var margin = {top: 40, right: 80, bottom: 80, left: 50};
         var width = 960 - margin.left - margin.right;
         var height = 500 - margin.top - margin.bottom;
 
@@ -249,6 +288,7 @@ body {
             .orient('left');
 
 
+
         // initialize the svg
         var svg = d3.select('div.b').append('svg')
             .attr('width', width + margin.left + margin.right)
@@ -258,7 +298,7 @@ body {
 
         // now initialize the svg line interpolation function
         var line = d3.svg.line()
-            .interpolate('basis')
+            .interpolate('linear')
             .x(function(a) {return x(a.date); })
             .y(function(b) {return y(b.deaths); });
 
@@ -269,7 +309,7 @@ body {
 
 
         // set the variable for the front/rear
-        var passengers = color.domain().map(function(name) {
+        passengers = color.domain().map(function(name) {
             return {
                 name: name,
                 values: data.map(function(i) {
@@ -336,6 +376,81 @@ body {
             .attr('x', 3)
             .attr('dy', '.35em')
             .text(function(b) {return b.name.charAt(0).toUpperCase() + b.name.substr(1); });
+
+        
+        var focus = svg.append('g')
+            .attr('class', 'focus')
+            .style('display', 'none');
+
+        focus.append('circle')
+            .attr('class', 'y0')
+            .attr('r', 3);
+        focus.append('text')
+            .attr('class', 'y0')
+            .attr('dy', '-1em');
+
+        focus.append('circle')
+            .attr('class', 'y1')
+            .attr('r', 3);
+        focus.append('text')
+            .attr('class', 'y1')
+            .attr('dy', '-1em');
+
+        focus.append('text')
+            .attr('class', 'y_bottom')
+            .attr('y', height)
+            .attr('dy', '-1em');
+
+        var bisectDate = d3.bisector(function(d) {return d.date; }).left;
+
+
+        var month_names = ['Jan','Feb','Mar','Apr','May','June','July','Aug','Sept','Oct','Nov','Dec']
+        var formatHoverOutput = function(d) {return d.deaths;};
+
+
+        function mousemove() {
+            var x0 = x.invert(d3.mouse(this)[0]);
+            var i = bisectDate(passengers[0].values, x0, 1);
+            var d0 = passengers[0].values[i - 1];
+            var d1 = passengers[0].values[i];
+            var true_idx = x0 - d0.date > d1.date - x0 ? i+1 : i;
+
+            var d_front = passengers[0].values[true_idx];
+            var d_rear = passengers[1].values[true_idx];
+
+            focus.select('circle.y0')
+                .attr('transform', 'translate(' + x(d_front.date) + ',' + y(d_front.deaths) + ')')
+                .attr('stroke', color(passengers[0].name));
+            focus.select('text.y0')
+                .attr('transform', 'translate(' + x(d_front.date) + ',' + y(d_front.deaths) + ')')
+                .text(formatHoverOutput(d_front))
+                .style('font-weight', 'bold');
+
+            focus.select('circle.y1')
+                .attr('transform', 'translate(' + x(d_rear.date) + ',' + y(d_rear.deaths) + ')')
+                .attr('stroke', color(passengers[1].name));
+            focus.select('text.y1')
+                .attr('transform', 'translate(' + x(d_rear.date) + ',' + y(d_rear.deaths) + ')')
+                .text(formatHoverOutput(d_rear))
+                .style('font-weight', 'bold');
+
+            focus.select('text.y_bottom')
+                .attr('transform', 'translate(' + x(d_front.date) + ',0)')
+                .text(month_names[d_front.date.getMonth()] + ' 19' + d_front.date.getYear());
+
+        }
+
+        // let's try adding mouseover
+        svg.append('rect')
+            .attr('class', 'overlay')
+            .attr('width', width)
+            .attr('height', height)
+            .on("mouseover", function() {focus.style('display', null); })
+            .on("mouseout", function() {focus.style('display', 'none'); })
+            .on("mousemove", mousemove);
+
+        
+
 
 
     }
