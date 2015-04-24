@@ -89,8 +89,9 @@ body {
 <hr/>
 
 
-<div class="b" align="center"></div>
-
+<div class="b" align="center">
+    <!-- <button>Reset</button> -->
+</div>
 
 
 
@@ -135,10 +136,12 @@ body {
         // initialize the xAxis and yAxis callback functions
         var xAxis = d3.svg.axis()
             .scale(x)
-            .orient('bottom');
+            .orient('bottom')
+            .ticks(5);
         var yAxis = d3.svg.axis()
             .scale(y)
-            .orient('left');
+            .orient('left')
+            .ticks(5);
 
         // let's also initialize the area and stacking functions
         var area = d3.svg.area()
@@ -151,13 +154,15 @@ body {
 
 
 
-
         // create the svg object
         var svg = d3.select('div.a').append('svg')
             .attr('width', width + margin.left + margin.right)
             .attr('height', height + margin.top + margin.bottom)
         .append('g')
             .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+
+
 
 
         // now we're ready to start working with the data
@@ -179,6 +184,7 @@ body {
         
         // enter the data
         var browser = svg.selectAll('.browser')
+//        var browser = container.append('g').selectAll('.browser')
             .data(browsers)
         .enter().append('g')
             .attr('class', 'browser');
@@ -289,12 +295,20 @@ body {
 
 
 
+        var zoom = d3.behavior.zoom()
+            .scaleExtent([1, 10])
+            .on("zoom", zoomed);
+
+
+
         // initialize the svg
         var svg = d3.select('div.b').append('svg')
             .attr('width', width + margin.left + margin.right)
             .attr('height', height + margin.top + margin.bottom)
         .append('g')
-            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+            .call(zoom);
+        
 
         // now initialize the svg line interpolation function
         var line = d3.svg.line()
@@ -305,6 +319,30 @@ body {
 
         // set the color domain
         color.domain(fields);
+
+
+        // container
+        var container = svg.append('svg')
+            .attr('width', width)
+            .attr('height', height)
+        .append('g');
+        /*
+        var svg2 = svg.append('svg')
+//        var container = svg.append('svg')
+            .attr('width', width - margin.left - margin.right)
+            .attr('height', height + margin.bottom + margin.top)
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+            .call(zoom);
+        */
+
+
+        function zoomed() {
+            container.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+          svg.select(".x.axis").call(xAxis);
+          svg.select(".y.axis").call(yAxis);
+
+        }
+
 
 
 
@@ -318,6 +356,23 @@ body {
             };
         });
 
+/*
+        function reset() {
+            d3.transition().duration(750).tween("zoom", function() {
+                var ix = d3.interpolate(x.domain(), d3.extent(data, function(a) {return a['_row']; })),
+                    iy = d3.interpolate(y.domain(), [0, d3.max(passengers, function(b) {return d3.max(b.values, function(c) {return c.deaths; }); })
+                        ]);
+                return function(t) {
+                    zoom.x(x.domain(ix(t))).y(y.domain(iy(t)));
+                    zoomed();
+                };
+            });
+            console.log('yea');
+        }
+
+                d3.select('button').on('click', reset);
+*/
+
         // set the x and y domains
         x.domain(d3.extent(data, function(a) {return a['_row']; }));
         y.domain([
@@ -327,7 +382,11 @@ body {
         ]);
 
 
-        var passenger = svg.selectAll('.passenger')
+        zoom.x(x).y(y);
+
+
+//        var passenger = svg.selectAll('.passenger')
+        var passenger = container.append('g').selectAll('.passenger')
             .data(passengers)
         .enter().append('g')
             .attr('class', 'passenger');
@@ -346,7 +405,7 @@ body {
             .call(xAxis)
         .append('text')
             .attr('x', width/2)
-            .attr('y', 40)
+            .attr('y', 30)
             .attr('dy', '.71em')
             .style('text-anchor', 'end')
             .text('Date');
@@ -369,6 +428,7 @@ body {
             .style('font-size', '20px')
             .text('Passengers Killed/Seriously Injured, 1969-1985');
 
+        /*
         // and the text accompanying each line
         passenger.append('text')
             .datum(function(a) {return {name: a.name, value: a.values[a.values.length - 1]}; })
@@ -376,6 +436,7 @@ body {
             .attr('x', 3)
             .attr('dy', '.35em')
             .text(function(b) {return b.name.charAt(0).toUpperCase() + b.name.substr(1); });
+        */
 
         
         var focus = svg.append('g')
@@ -398,7 +459,7 @@ body {
 
         focus.append('text')
             .attr('class', 'y_bottom')
-            .attr('y', height)
+            .attr('y', height + margin.bottom)
             .attr('dy', '-1em');
 
         var bisectDate = d3.bisector(function(d) {return d.date; }).left;
@@ -433,11 +494,11 @@ body {
                 .attr('transform', 'translate(' + x(d_rear.date) + ',' + y(d_rear.deaths) + ')')
                 .text(formatHoverOutput(d_rear))
                 .style('font-weight', 'bold');
-
+            
             focus.select('text.y_bottom')
                 .attr('transform', 'translate(' + x(d_front.date) + ',0)')
                 .text(month_names[d_front.date.getMonth()] + ' 19' + d_front.date.getYear());
-
+        
         }
 
         // let's try adding mouseover
@@ -448,6 +509,33 @@ body {
             .on("mouseover", function() {focus.style('display', null); })
             .on("mouseout", function() {focus.style('display', 'none'); })
             .on("mousemove", mousemove);
+
+
+
+        // adding a legend
+        var legend = svg.append('g')
+            .attr('class', 'legend');
+
+        legend.selectAll('rect')
+            .data(passengers).enter()
+        .append('g')
+            .each(function(d,i) {
+                var g = d3.select(this);
+                g.append('rect')
+                .attr('x', width + 10)
+                .attr('y', 50 + (i * 25))
+                .attr('width', 10)
+                .attr('height', 10)
+                .style('fill', color(d.name));
+
+                g.append('text')
+                .attr('x', width + 30)
+                .attr('y', 50 + (i * 25)+8)
+                .attr('height', 30)
+                .attr('width', 100)
+                .text(d.name.charAt(0).toUpperCase() + d.name.substr(1));
+            }
+        );
 
         
 
