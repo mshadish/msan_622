@@ -11,7 +11,6 @@
 
 <script src="js/d3.min.js"></script>
 <script src="http://d3js.org/d3.v3.min.js"></script>
-<!-- <script src="http://d3js.org/d3.v3.min.js"></script> -->
 <script src="js/d3.v3.js"></script>
 <script src="js/jquery.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
@@ -33,6 +32,13 @@ body {
     fill: none;
     stroke: #000;
     shape-rendering: crispEdges;
+}
+
+
+.brush .extent {
+  stroke: #fff;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
 }
 
 
@@ -125,23 +131,41 @@ body {
         fields = ['DriversKilled', 'VanKilled'];
 
         // initialize the margins
-        var margin = {top: 40, right: 20, bottom: 80, left: 50};
-        var width = 960 - margin.left - margin.right;
+        var margin = {top: 40, right: 120, bottom: 140, left: 50};
+        var margin2 = {top: 400, right: 20, bottom: 30, left: 50};
+
+        var width = 1000 - margin.left - margin.right;
         var height = 500 - margin.top - margin.bottom;
+        var height2 = 500 - margin2.top - margin2.bottom;
 
         // initialize our x, y, and colors
         var x = d3.time.scale().range([0, width]);
         var y = d3.scale.linear().range([height, 0]);
         var color = d3.scale.category10();
+
+        // also initialize the axes for brushing
+        var x2 = d3.time.scale().range([0, width]);
+        var y2 = d3.scale.linear().range([height2, 0]);
+
         // initialize the xAxis and yAxis callback functions
         var xAxis = d3.svg.axis()
             .scale(x)
             .orient('bottom')
-            .ticks(5);
+            .ticks(6);
         var yAxis = d3.svg.axis()
             .scale(y)
             .orient('left')
             .ticks(5);
+
+        // and initialize the xaxis callback function for our brushing plot
+        var xAxis2 = d3.svg.axis().scale(x2).orient('bottom');
+
+
+        // brushing var
+        var brush = d3.svg.brush()
+            .x(x2)
+            .on('brush', brushed);
+
 
         // let's also initialize the area and stacking functions
         var area = d3.svg.area()
@@ -153,16 +177,30 @@ body {
 
 
 
+        // brushing area
+        var area2 = d3.svg.area()
+            .x(function(d) {return x2(d.date); })
+            .y0(function(d) {return y2(d.y0); })
+            .y1(function(d) {return y2(d.y0 + d.y); });
+
+
+
 
         // create the svg object
         var svg = d3.select('div.a').append('svg')
             .attr('width', width + margin.left + margin.right)
-            .attr('height', height + margin.top + margin.bottom)
-        .append('g')
-            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+            .attr('height', height + margin.top + margin.bottom);
 
 
-
+        // brushing contd
+        
+        /*
+        svg.append('defs').append('clipPath')
+            .attr('id', 'clip')
+        .append('rect')
+            .attr('width', width)
+            .attr('height', height);
+        */
 
 
         // now we're ready to start working with the data
@@ -181,19 +219,67 @@ body {
         x.domain(d3.extent(data, function(i) {return i['_row']; }));
         y.domain([0, d3.max(data, function(j) {return j['DriversKilled'] + j['VanKilled'];})]);
 
+        // brushing domains
+        x2.domain(x.domain());
+        y2.domain(y.domain());
+
         
         // enter the data
+        
         var browser = svg.selectAll('.browser')
-//        var browser = container.append('g').selectAll('.browser')
             .data(browsers)
         .enter().append('g')
-            .attr('class', 'browser');
+            .attr('class', 'browser')
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+        
 
-
-        browser.append('path')
+        browser.append('svg')
+            .attr('width', width)
+            .attr('height', height)
+        .append('path')
             .attr('class', 'area')
             .attr('d', function(d) {return area(d.values); })
             .style('fill', function(i) {return color(i.name); });
+
+
+        browser.append('g')
+            .attr('class', 'x axis')
+            .attr('transform', 'translate(0,' + height + ')')
+            .call(xAxis);
+
+        browser.append('g')
+            .attr('class', 'y axis')
+            .call(yAxis);
+
+        var context = svg.selectAll('.context')
+            .data(browsers)
+        .enter().append('g')
+            .attr('class', 'context')
+            .attr('transform', 'translate(' + margin2.left + ',' + margin2.top + ')');
+
+        
+        context.append('path')
+            .attr('class', 'area')
+            .attr('d', function(d) {return area2(d.values);})
+            .style('fill', function(i) {return color(i.name); });
+        
+        context.append('g')
+            .attr('class', 'x axis')
+            .attr('transform', 'translate(0,' + height2 + ')')
+            .call(xAxis2);
+        context.append('g')
+            .attr('class', 'x brush')
+            .call(brush)
+        .selectAll('rect')
+            .attr('y', -6)
+            .attr('height', height2 + 7);
+
+
+        function brushed() {
+            x.domain(brush.empty() ? x2.domain() : brush.extent());
+            browser.select('.area').attr('d', function(d) {return area(d.values)});
+            browser.select('.x.axis').call(xAxis);
+        }
 
 
 
@@ -207,34 +293,33 @@ body {
             .each(function(d,i) {
                 var g = d3.select(this);
                 g.append('rect')
-                .attr('x', width - 100)
-                .attr('y', 50 - (i * 25))
-                .attr('width', 10)
-                .attr('height', 10)
-                .style('fill', color(d.name));
+                    .attr('x', width + margin.left + 10)
+                    .attr('y', 150 - (i * 25))
+                    .attr('width', 10)
+                    .attr('height', 10)
+                    .style('fill', color(d.name));
 
                 g.append('text')
-                .attr('x', width - 80)
-                .attr('y', 50 - (i * 25) + 8)
-                .attr('height', 30)
-                .attr('width', 100)
-                .text(d.name);
+                    .attr('x', width + margin.left + 30)
+                    .attr('y', 150 - (i * 25) + 8)
+                    .attr('height', 30)
+                    .attr('width', 100)
+                    .text(d.name);
             }
         );
 
 
+        /*
         svg.append("g")
             .attr("class", "x axis")
             .attr("transform", "translate(0," + height + ")")
             .call(xAxis);
-
-
-        svg.append('g')
-            .attr('class', 'y axis')
-            .call(yAxis);
+        */
 
         // FINALLY, LET'S ADD OUR TEXT
         // x-axis
+        
+        /*
         svg.append('g')
             .attr('class', 'x axis')
             .attr('transform', 'translate(0,' + height + ')')
@@ -245,21 +330,26 @@ body {
             .attr('dy', '.71em')
             .style('text-anchor', 'end')
             .text('Date');
+        */
+        
 
         // y-axis
+        /*
         svg.append('g')
             .attr('class', 'y axis')
             .call(yAxis)
-        .append('text')
-            .attr('x', 60)
-            .attr('y', 20)
+        */
+        svg.append('text')
+            .attr('x', margin.left + 20)
+            .attr('y', margin.top - 10)
             .style('text-anchor', 'end')
             .text('Deaths');
+        
 
         // title
         svg.append('text')
-            .attr('x', width / 2)
-            .attr('y', -margin.top / 2)
+            .attr('x', (width + margin.left + margin.right) / 2)
+            .attr('y', margin.top / 2)
             .attr('text-anchor', 'middle')
             .style('font-size', '20px')
             .text('Car and Van Drivers Killed, 1969 - 1985');
@@ -438,22 +528,31 @@ body {
             .text(function(b) {return b.name.charAt(0).toUpperCase() + b.name.substr(1); });
         */
 
-        
+        /*
+        var focus = svg.append('svg')
+            .attr('width', width)
+            .attr('height', height)
+        .append('g')
+        */        
         var focus = svg.append('g')
             .attr('class', 'focus')
             .style('display', 'none');
 
-        focus.append('circle')
+        var focus2 = focus.append('svg')
+            .attr('width', width)
+            .attr('height', height);
+
+        focus2.append('circle')
             .attr('class', 'y0')
             .attr('r', 3);
-        focus.append('text')
+        focus2.append('text')
             .attr('class', 'y0')
             .attr('dy', '-1em');
 
-        focus.append('circle')
+        focus2.append('circle')
             .attr('class', 'y1')
             .attr('r', 3);
-        focus.append('text')
+        focus2.append('text')
             .attr('class', 'y1')
             .attr('dy', '-1em');
 
