@@ -90,15 +90,79 @@ body {
 
 
 
-<div class="a" align="center"></div>
+<div class="row">
+    <h2 class="header" align="center">Matt Shadish</h3>
+    <h4 class="header" align="center">Source Code: <a href="https://github.com/mshadish/msan_622">github.com/mshadish/msan_622</a></h3>
+</div>
+<hr/>
 
+
+<div class="row">
+<h3 class="header">Data Preprocessing</h3>
+<ul>
+    <li>Besides converting the <i>Seatbelts</i> dataframe to a JSON file, no preprocessing was necessary</li>
+</ul>
+</div>
+<hr/>
+
+
+<div class="row">
+<h3 class="header">User Guide</h3>
+    <p>The first plot is a stacked area chart describing the number of car drivers and van drivers killed, by date.  This chart supports brushing, and so the user can specify a particular time frame to focus on by using the timeline below the main plot.</p>
+    <p>The second plot is a multi-line chart describing the number of front passengers and rear passengers that were injured/killed, by date.  This chart supports zooming, panning, and details-on-demand.  To zoom in on a specific point in time, the user can either double-click the area of the chart he/she wants to focus on or use the mouse wheel.  To pan, the user can simply click and drag.  To use the details-on-demand feature, the user only has to hover the mouse over the time point at which he/she wants more information.</p>
+</div>
+<hr/>
+
+
+
+
+
+<div class="a" align="center"></div>
 <hr/>
 
 
 <div class="b" align="center">
-    <!-- <button>Reset</button> -->
 </div>
+<hr/>
 
+<div class="row">
+<h3 class="header">Basic Functionality: Stacked Area, Multi-Series Plots</h3>
+<ul>
+    <li>The number of van drivers and car drivers by date (month/year) is plotted as a stacked area chart</li>
+    <li>The number of front and rear passengers either killed or seriously injured by date is plotted as a multi-line plot</li>
+</ul>
+</div>
+<hr/>
+
+
+<div class="row">
+<h3 class="header">Moderate Functionality: Zooming, Panning, Details-on-Demand</h3>
+<ul>
+    <li>I applied all three functionalities to the multi-line plot</li>
+    <li>The user can zoom in and out of the plot by either double-clicking or using the mouse wheel</li>
+    <li>The user can also pan along the x- and y-axes by clicking and dragging within the plot area</li>
+    <li>Details-on-demand was implemented as a way to visualize the exact number of injuries/deaths at a particular point in time by hovering the mouse over the chart.  The corresponding date (month/year) also appears below the x-axis.  By positioning the date below the x-axis, I can guarantee that there will never be any conflict between the date display and any plot lines</li>
+    <li>When the user hovers over a point in time at which either of the lines is no longer in view, the corresponding detail-on-demand may be obscured.  This was done intentionally to prevent "ghost" details-on-demand from appearing outside of the plot area.  However, the date will always appear at the bottom.</li>
+</ul>
+</div>
+<hr/>
+
+
+
+<div class="row">
+<h3 class="header">Advanced Functionality: Brushing</h3>
+<ul>
+    <li>The stacked area chart of van and car drivers killed supports brushing functionality</li>
+</ul>
+</div>
+<hr/>
+
+
+<div class="row">
+<h3 class="header">Summary</h3>
+    <p>This data describes the road injuries and fatalities in Great Britain between 1969 and 1985.  In order to represent the number of van and car drivers killed, I wanted to emphasize that the bulk of deaths from 1969 to 1985 came from car drivers.  Therefore, I chose to represent this data as a stacked area chart.  There appears to be some seasonality in the data (as indicated by the peaks and valleys), so I added an option for brushing if the user wanted to focus on a single "season."  Although I did not use colorbrewer to choose the categorical colors, I feel that the d3's category colors are sufficient to provide differentiation between car drivers and van drivers without emphasizing one over the other.</p>
+    <p>I then plotted the number of injuries/deaths by passenger, by date as a multi-line plot.  For this plot, I added a hover feature that would display the values for both time series based on the x-position of the pointer.  To avoid ambiguity about the date corresponding to a mouseover, I elected to display the corresponding date below the x-axis (instead of drawing a vertical line down to the x-axis).  For a roughly similar amount of ink, I can provide greater clarity, thereby improving the data/ink ratio over the alternative of dropping a horizontal line down to the x-axis.  On an unrelated note, because of the length of the time series, I chose to add a zoom/pan feature as well.  This would allow the user to highlight a particular time range and pan around freely.</p>
+</div>
 
 
 <script>
@@ -111,6 +175,7 @@ body {
 
 
     // now we'll read in the data and call the plotting functions
+    // note that we only read in the data once -- once it's loaded into memory, we use that data for multiple plotting calls
     d3.json('data/seatbelts.json', function(error, json) {
         if (error) return console.warn(error);
 
@@ -125,17 +190,20 @@ body {
     });
 
 
-    // define the function to create the area chart
+
+/*
+FUNCTION FOR STACKED AREA CHART
+*/
     function genStackedAreaChart(data) {
         // we'll plot the stacked area chart of the drivers killed and van drivers killed
         fields = ['DriversKilled', 'VanKilled'];
 
         // initialize the margins
-        var margin = {top: 40, right: 120, bottom: 140, left: 50};
+        var margin = {top: 40, right: 120, bottom: 190, left: 50};
         var margin2 = {top: 400, right: 20, bottom: 30, left: 50};
 
         var width = 1000 - margin.left - margin.right;
-        var height = 500 - margin.top - margin.bottom;
+        var height = 550 - margin.top - margin.bottom;
         var height2 = 500 - margin2.top - margin2.bottom;
 
         // initialize our x, y, and colors
@@ -192,17 +260,6 @@ body {
             .attr('height', height + margin.top + margin.bottom);
 
 
-        // brushing contd
-        
-        /*
-        svg.append('defs').append('clipPath')
-            .attr('id', 'clip')
-        .append('rect')
-            .attr('width', width)
-            .attr('height', height);
-        */
-
-
         // now we're ready to start working with the data
         // set the color domain
         color.domain(["DriversKilled", "VanKilled"]);
@@ -219,13 +276,14 @@ body {
         x.domain(d3.extent(data, function(i) {return i['_row']; }));
         y.domain([0, d3.max(data, function(j) {return j['DriversKilled'] + j['VanKilled'];})]);
 
+
         // brushing domains
         x2.domain(x.domain());
         y2.domain(y.domain());
 
         
         // enter the data
-        
+        // browser will represent our 'main' plot
         var browser = svg.selectAll('.browser')
             .data(browsers)
         .enter().append('g')
@@ -251,6 +309,8 @@ body {
             .attr('class', 'y axis')
             .call(yAxis);
 
+
+        // context will represent our 'timeline' at the bottom
         var context = svg.selectAll('.context')
             .data(browsers)
         .enter().append('g')
@@ -308,37 +368,14 @@ body {
             }
         );
 
-
-        /*
-        svg.append("g")
-            .attr("class", "x axis")
-            .attr("transform", "translate(0," + height + ")")
-            .call(xAxis);
-        */
-
-        // FINALLY, LET'S ADD OUR TEXT
-        // x-axis
-        
-        /*
-        svg.append('g')
-            .attr('class', 'x axis')
-            .attr('transform', 'translate(0,' + height + ')')
-            .call(xAxis)
-        .append('text')
-            .attr('x', width/2)
-            .attr('y', 40)
-            .attr('dy', '.71em')
-            .style('text-anchor', 'end')
+        // NOW LET'S ADD SOME TEXT FOR THE X- AND Y-AXES
+        // text for the x-axis
+        svg.append('text')
+            .attr('x', margin.left + (width/2))
+            .attr('y', height + margin.top + margin.bottom - margin2.bottom)
             .text('Date');
-        */
-        
 
-        // y-axis
-        /*
-        svg.append('g')
-            .attr('class', 'y axis')
-            .call(yAxis)
-        */
+        // here is the text for the y-axis
         svg.append('text')
             .attr('x', margin.left + 20)
             .attr('y', margin.top - 10)
@@ -359,7 +396,10 @@ body {
 
 
 
-    // define function to create the multiline chart
+
+/*
+FUNCTION FOR MULTI-LINE CHART
+*/
     function genMultilineChart(data) {
         // we'll plot the front and rear drivers killed/severely injured
         fields = ['front', 'rear'];
@@ -385,6 +425,7 @@ body {
 
 
 
+        // adding the zooming feature
         var zoom = d3.behavior.zoom()
             .scaleExtent([1, 10])
             .on("zoom", zoomed);
@@ -416,16 +457,9 @@ body {
             .attr('width', width)
             .attr('height', height)
         .append('g');
-        /*
-        var svg2 = svg.append('svg')
-//        var container = svg.append('svg')
-            .attr('width', width - margin.left - margin.right)
-            .attr('height', height + margin.bottom + margin.top)
-            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
-            .call(zoom);
-        */
 
 
+        // define our zooming function
         function zoomed() {
             container.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
           svg.select(".x.axis").call(xAxis);
@@ -446,28 +480,11 @@ body {
             };
         });
 
-/*
-        function reset() {
-            d3.transition().duration(750).tween("zoom", function() {
-                var ix = d3.interpolate(x.domain(), d3.extent(data, function(a) {return a['_row']; })),
-                    iy = d3.interpolate(y.domain(), [0, d3.max(passengers, function(b) {return d3.max(b.values, function(c) {return c.deaths; }); })
-                        ]);
-                return function(t) {
-                    zoom.x(x.domain(ix(t))).y(y.domain(iy(t)));
-                    zoomed();
-                };
-            });
-            console.log('yea');
-        }
-
-                d3.select('button').on('click', reset);
-*/
 
         // set the x and y domains
         x.domain(d3.extent(data, function(a) {return a['_row']; }));
         y.domain([
-        //    d3.min(passengers, function(b) {return d3.min(b.values, function(c) {return c.deaths; }); }),
-        0,
+            0,
             d3.max(passengers, function(b) {return d3.max(b.values, function(c) {return c.deaths; }); })
         ]);
 
@@ -475,7 +492,6 @@ body {
         zoom.x(x).y(y);
 
 
-//        var passenger = svg.selectAll('.passenger')
         var passenger = container.append('g').selectAll('.passenger')
             .data(passengers)
         .enter().append('g')
@@ -518,22 +534,8 @@ body {
             .style('font-size', '20px')
             .text('Passengers Killed/Seriously Injured, 1969-1985');
 
-        /*
-        // and the text accompanying each line
-        passenger.append('text')
-            .datum(function(a) {return {name: a.name, value: a.values[a.values.length - 1]}; })
-            .attr('transform', function(d) {return 'translate(' + x(d.value.date) + ',' + y(d.value.deaths) + ')'; })
-            .attr('x', 3)
-            .attr('dy', '.35em')
-            .text(function(b) {return b.name.charAt(0).toUpperCase() + b.name.substr(1); });
-        */
 
-        /*
-        var focus = svg.append('svg')
-            .attr('width', width)
-            .attr('height', height)
-        .append('g')
-        */        
+        // here are our details-on-demand      
         var focus = svg.append('g')
             .attr('class', 'focus')
             .style('display', 'none');
@@ -564,7 +566,10 @@ body {
         var bisectDate = d3.bisector(function(d) {return d.date; }).left;
 
 
+        // we'll define our month names in order to convert our numeric month representations from our data to word representations of hte months
         var month_names = ['Jan','Feb','Mar','Apr','May','June','July','Aug','Sept','Oct','Nov','Dec']
+
+
         var formatHoverOutput = function(d) {return d.deaths;};
 
 
@@ -636,21 +641,9 @@ body {
             }
         );
 
-        
-
-
-
     }
     // END OF MULTI LINE CHART FUNCTION
-
-
-
-
-
 </script>
-
-
-
 
 
 <hr/>
