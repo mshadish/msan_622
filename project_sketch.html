@@ -1,0 +1,132 @@
+<!-- Matt Shadish -->
+
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+
+
+<script src="js/d3.min.js"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="js/d3.v3.js"></script>
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/d3.tip.v0.6.3.js"></script>
+
+<style type="text/css">
+body {
+    padding-top: 80px;
+    padding-bottom: 20px;
+    padding-left: 30px;
+    padding-right: 30px;
+    font: 16px sans-serif;
+}
+</style>
+
+
+
+<body>
+
+
+
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle Navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="index.html">MSAN 622</a>
+        </div>
+
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li><a href="index.html#homework">Homework</a></li>
+                <li><a href="index.html#project">Project</a></li>
+                <li><a href="index.html#participation">Participation</a></li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="index.html#about">About</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+<div class="row">
+    <h2 class="header" align="center">Project Sketch</h3>
+</div>
+<hr/>
+
+
+<div class="row">
+<h3 class="header">Planned Tools</h3>
+	<p>The data is relatively clean and has already been scaled to percentages.  The only preprocessing that may be necessary will be renaming the columns for clarity (I can do this from the command line).  However, I may elect to use annual GDP data by country from an external source.  In that case, I will use Python (specifically <i>pandas</i>) to facilitate any necessary merging.  In terms of visualization, I will be using D3 exclusively.</p>
+</div>
+<hr/>
+
+
+<div class="row">
+<h3 class="header">Planned Techniques</h3>
+<ul>
+	<li>My first visualization is inspired by Hans Rosling and will be my most ambitious.  In particular, I will display the data as a bubble chart, with each bubble representing an individual country.  Because the data also represents a time series within each country, I will have the points move along the x-y coordinate plane over time.  Instead of choosing which two features to plot against on the x- and y-axes, I will allow the user to interactively choose which features to display.  Not only will this give me the opportunity to learn how to deal with a time component, it will also force me to learn how to dynamically adjust the x- and y-axes of a plot based on user input.  If I have the opportunity to merge the appropriate data, I will also scale each bubble by the country's GDP.</li>
+	<li>My second visualization will be a parallel coordinate plot that will change over time to reflect the changing years.  Although this does not provide as granular of a view per country, it does make it easier to spot any sorts of trends among the variables in the data.  Similar to the previous technique, I hope to learn how to implement smooth transitions over time, this time in a parallel coordinate setting.</li>
+	<li>My third visualization will be a multi-line plot to visualize the time series, so the x-axis will be the date.  The user will have the option to dynamically choose what feature the y-axis should be.  Each line in the multi-line chart will represent an individual country, so I will also implement a tooltip that will display the name of the corresponding country on hover.  From this visualization, I hope to learn how to work with tooltips in line charts (specifically, how to represent the entire line as a single entity on hover).</li>
+</ul>
+</div>
+<hr/>
+
+
+<div class="row">
+<h3 class="header">Planned Interaction</h3>
+	<p>The most important feature in my bubble chart and multi-line plot will be the user's ability to select what to display on the x- and y-axes, perhaps via a drop-down menu.  This implies that I will also need to implement smooth transitions when the user changes axis selections.</p>
+	<p>Another important feature will be the use of time in the bubble chart and parallel coordinate plot.  Not only will I need to implement smooth transitions between time periods, I would also like to allow the user to specify a particular point in time at which he/she wants to observe the data (in effect stopping the transitions over time).  This might be in the form of a time scale with a pointer that moves across the time scale over time.  When selected, the user can specify the point he/she wants to see a "snapshot" of the data.</p>
+	<p>Other features will include brushing for the parallel coordinate plot and mouseover tooltips for the bubble chart and multi-line plot.</p>
+</div>
+<hr/>
+
+
+<div class="row">
+<h3 class="header">Planned Interface</h3>
+	<h4 class="header">Bubble Chart</h4>
+	<ul>
+		<li>The user can select the x-axis, y-axis, and specific point in time at which the points should be displayed</li>
+		<li>This will be the only plot in which the different observations have different colors (similar to Hans Rosling's demonstration)</li>
+		<li>Note that, by default, the points will move automatically through the years</li>
+		<li>Although it isn't shown in the sketch, there will also be a tooltip feature to display the country name for each point</li>
+	</ul>
+		<img src="img/bubble.jpg">
+	<h4 class="header">Parallel Coordinate Plot</h4>
+	<ul>
+		<li>All 9 features will be displayed in the parallel plot</li>
+		<li>The user can select which point in time he/she wants to see the data.  Otherwise, the data will transition from year to year</li>
+	</ul>
+		<img src="img/parallel.jpg">
+	<h4 class="header">Multi-line Plot</h4>
+	<ul>
+		<li>Here, the user will be able to select what to display on the y-axis</li>
+		<li>There will also be a tooltip on mouseover showing the country name for each observation</li>
+	</ul>
+		<img src="img/multiline.jpg">
+
+</div>
+
+
+
+</body>
+
+
+
+
+<hr/>
+
+<footer>
+    <p style="text-align: center;">Matt Shadish &bullet; MSAN 622 Information Visualization &bullet; Spring 2015</p>
+</footer>
