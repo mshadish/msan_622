@@ -34,6 +34,39 @@ body {
     shape-rendering: crispEdges;
 }
 
+.dot {
+    stroke: #000;
+    opacity: 0.3;
+}
+
+.d3-tip {
+    line-height: 1;
+    font-weight: bold;
+    width: 250px;
+    text-align: center;
+    padding: 4px;
+    background: rgba(0,0,0,0.8);
+    color: #fff;
+    border-radius: 2px;
+}
+
+.d3-tip:after {
+    box-sizing: border-box;
+    display: inline;
+    font-size: 10px;
+    width: 100%;
+    line-height: 1;
+    color: rgba(0,0,0,0.8);
+    content: "\25BC";
+    position: absolute;
+    text-align: center;
+}
+.d3-tip.n:after {
+    margin: -1px 0 0 0;
+    top: 100%;
+    left: 0;
+}
+
 
 .line {
     fill: none;
@@ -106,23 +139,25 @@ body {
         <p>Budget vs. Number of Votes</p>
     </div>
 
-    <div class="col-md-6">
-        <p>Budget vs. Length</p>
+    <div class="col-md-6" id="right">
     </div>
 </div>
 
 
 <script>
-    // let's initialize the data set variable as a global before starting our plotting
+    // let's initialize the data set variables as globals before starting our plotting
     var data_set;
+    var data_set_raw;
     // date parsing function here
     parseDate = d3.time.format('%Y').parse;
 
 
+    
+    // aggregated data for our time series plot
     d3.csv('data/movies_agg.csv', function(error, data) {
         if (error) {
             console.warn(error);
-            return
+            return;
         }
         // otherwise, read in the data and plot
         data_set = data;
@@ -132,6 +167,18 @@ body {
         });
 
         genLinePlot(data_set);
+    })
+    
+
+    // raw data for our bubble plots
+    d3.csv('data/movies.csv', function(error, data) {
+        if (error) {
+            console.warn(error);
+            return;
+        }
+        // read in the raw data
+        data_set_raw = data;
+        genBubblePlotBudgetVLength(data_set_raw);
     })
 
 
@@ -237,7 +284,7 @@ body {
             var i = bisectDate(genres[0].values, x0, 1);
             var d0 = genres[0].values[i - 1];
             var d1 = genres[0].values[i];
-            var true_idx = x0 - d0.year > d1.year - x0 ? i + 1 : i;
+            var true_idx = x0 - d0.year > d1.year - x0 ? i : i - 1;
 
             // loop thru the fields
             fields.forEach(function(d, i) {
@@ -309,6 +356,124 @@ body {
                     .style('font-weight', 'bold')
                     .text(d.name);
             });
+    }
+
+
+
+    // plotting the budget vs length bubble plot
+    function genBubblePlotBudgetVLength(data) {
+        // initialize margins
+        var margin = {top: 40, bottom: 50, left: 40, right: 50};
+        // define the dimensions
+        var width = 550 - margin.left - margin.right;
+        var height = 300 - margin.top - margin.bottom;
+        // set the appropriate scalings
+        var xScale = d3.scale.linear()
+            .range([0, width]);
+        var yScale = d3.scale.linear()
+        //var yScale = d3.scale.log()
+            .range([height, 0]);
+        var colorScale = d3.scale.linear()
+            .range(['#deebf7','#9ecae1', '#3182bd']);
+        // axis callback functions
+        var xAxis = d3.svg.axis()
+            .scale(xScale)
+            .ticks(5)
+            .orient('bottom');
+        var yAxis = d3.svg.axis()
+            .scale(yScale)
+            .orient('left');
+
+        // initialize our x and y
+        var x_name = 'budget';
+        var y_name = 'length';
+        var color_name = 'rating';
+        // convert these fields into numbers
+        data_set_raw.forEach(function(d) {
+            d[x_name] = Number(d[x_name]);
+            //d[y_name] = Math.log(Number(d[y_name]));
+            d[y_name] = Number(d[y_name]);
+            d[color_name] = Number(d[color_name]);
+        });
+
+
+        // make the svg object
+        var svg = d3.select('div.b').select('div#right').append('svg')
+            .attr('width', width + margin.left + margin.right)
+            .attr('height', height + margin.top + margin.bottom)
+        .append('g')
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+
+        // now let's set the domains for the x- and y-axes
+        var max_x = d3.max(data_set_raw, function(d) {return d[x_name]; });
+        var max_y = d3.max(data_set_raw, function(d) {return d[y_name]; });
+        //var max_y = 1000;
+        console.log(max_y);
+        var max_color = d3.max(data_set_raw, function(d) {return d[color_name]; });
+        xScale.domain([0, max_x]);
+        yScale.domain([0, Math.log(max_y)]);
+        colorScale.domain([0, max_color/2, max_color]);
+
+
+        // time to make the data points
+        var dots = svg.append('g')
+            .attr('class', 'dots')
+            .selectAll('.dot')
+            .data(data_set_raw)
+        .enter()
+            .append('circle')
+            .attr('class', 'dot')
+            // x-position
+            .attr('cx', function(d) {return xScale(d[x_name]); })
+            // y-position
+            .attr('cy', function(d) {return yScale(Math.log(d[y_name])); })
+            // radius
+            .attr('r', 3)
+            // color
+            .attr('fill', function(d) {return colorScale(d[color_name]); });
+
+        // make the tooltip
+        var tip_obj = d3.tip()
+            .attr('class', 'd3-tip')
+            .attr('id', 'tip_obj')
+            .offset([-10, 0])
+            .html(function(d) {
+                return "<span style='color:white'>" + d['title'] + "<br>Budget: $" + d[x_name] + "<br>Length: " + d[y_name] + "<br>Rating: " + d[color_name] + "</span>";
+            });
+        svg.call(tip_obj);
+        dots.on('mouseover', tip_obj.show)
+            .on('mouseout', tip_obj.hide);
+
+        // axis stuff
+        // x-axis
+        svg.append('g')
+            .attr('class', 'x axis')
+            .attr('transform', 'translate(0,' + height + ')')
+            .call(xAxis)
+        .append('text')
+            .attr('x', width / 2)
+            .attr('y', 40)
+            .text(x_name.charAt(0).toUpperCase() + x_name.substr(1));
+
+        // y-axis
+        svg.append('g')
+            .attr('class', 'y axis')
+            .call(yAxis)
+        .append('text')
+            .attr('x', -margin.left/2)
+            .attr('y', -10)
+            .text('log(' + (y_name.charAt(0).toUpperCase() + y_name.substr(1)) + ')');
+
+        // title
+        svg.append('text')
+            .attr('x', width / 2)
+            .attr('y', -margin.top/2)
+            .style('font-size', '18px')
+            .style('font-weight', 'bold')
+            .style('text-anchor', 'middle')
+            .text('Film Budget vs. Length, with Rating');
+
 
 
     }
