@@ -25,6 +25,24 @@ body {
     padding-right: 30px;
     font: 16px sans-serif;
 }
+
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+
+
+.line {
+    fill: none;
+}
+
+.overlay {
+    fill: none;
+    pointer-events: all;
+}
 </style>
 
 
@@ -60,13 +78,256 @@ body {
 </nav>
 
 
+<div class="row">
+    <h2 class="header" align="center">Matt Shadish</h3>
+    <h4 class="header" align="center">Source Code: <a href="https://github.com/mshadish/msan_622">github.com/mshadish/msan_622</a></h3>
+</div>
+
+
+
+<script type='text/javascript' src='https://public.tableau.com/javascripts/api/viz_v1.js'></script>
+<div class='tableauPlaceholder' style='width: 1100px; height: 742px;'>
+    <h2 class="header" align="center">Tableau Prototype</h2>
+    <hr/>
+    <noscript><a href='#'><img alt='Homework4_dash ' src='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;ho&#47;homework4_1&#47;Homework4_dash&#47;1_rss.png' style='border: none' /></a></noscript><object class='tableauViz' width='1100' height='742' style='display:none;'><param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' /> <param name='site_root' value='' /><param name='name' value='homework4_1&#47;Homework4_dash' /><param name='tabs' value='no' /><param name='toolbar' value='yes' /><param name='static_image' value='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;ho&#47;homework4_1&#47;Homework4_dash&#47;1.png' /> <param name='animate_transition' value='yes' /><param name='display_static_image' value='yes' /><param name='display_spinner' value='yes' /><param name='display_overlay' value='yes' /><param name='display_count' value='yes' /><param name='showVizHome' value='no' /><param name='showTabs' value='y' /><param name='bootstrapWhenNotified' value='true' /></object>
+</div>
+
+
+
+
+
+
+<div class="a">
+        <h2 class="page-header" align="center"><a name="about"></a>D3 Dashboard</h2>
+</div>
+
+<div class="b">
+    <div class="col-md-6" id="left">
+        <p>Budget vs. Number of Votes</p>
+    </div>
+
+    <div class="col-md-6">
+        <p>Budget vs. Length</p>
+    </div>
+</div>
+
+
+<script>
+    // let's initialize the data set variable as a global before starting our plotting
+    var data_set;
+    // date parsing function here
+    parseDate = d3.time.format('%Y').parse;
+
+
+    d3.csv('data/movies_agg.csv', function(error, data) {
+        if (error) {
+            console.warn(error);
+            return
+        }
+        // otherwise, read in the data and plot
+        data_set = data;
+        // convert year to a date
+        data_set.forEach(function(d) {
+            d['year'] = parseDate(d['year']);
+        });
+
+        genLinePlot(data_set);
+    })
+
+
+
+
+
+
+    // DEFINE OUR PLOTTING FUNCTIONS HERE
+    function genLinePlot(data) {
+        // pull out the fields, i.e., remove the year
+        var first_entry = Object.keys(data[0]);
+        var fields = first_entry.filter(function(d) {return d !== 'year'; });
+
+
+        // define our margins
+        var margin = {top: 30, bottom: 60, left: 60, right: 10};
+        // define the dimensions
+        var width = 1100 - margin.left - margin.right;
+        var height = 300 - margin.top - margin.bottom;
+
+        // initialize our x, y, and colors
+        var x = d3.time.scale().range([0, width]);
+        var y = d3.scale.linear().range([height, 0]);
+        var color = d3.scale.category10();
+
+        // scaling functions
+        var xAxis = d3.svg.axis()
+            .scale(x)
+            .orient('bottom');
+        var yAxis = d3.svg.axis()
+            .scale(y)
+            .orient('left');
+
+
+        // INITIALIZE SVG AND ASSOCIATED ELEMENTS
+        var svg = d3.select('div.a').append('svg')
+            .attr('width', width + margin.left + margin.right)
+            .attr('height', height + margin.top + margin.bottom)
+        .append('g')
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+        // initialize the line interpolation function
+        var line = d3.svg.line()
+            .interpolate('linear')
+            .x(function(d) {return x(d.year); })
+            .y(function(d) {return y(d.Count); });
+
+        // initialize the colors
+        color.domain(fields);
+
+        // pull out the counts for the different fields
+        var genres = color.domain().map(function(name) {
+            return {
+                name: name,
+                values: data.map(function(i) {
+                    return {year: i['year'], Count: Number(i[name])};
+                })
+            };
+        });
+        // now we can set the x and y domains
+        x.domain(d3.extent(data, function(d) {return d['year']; }));
+        y.domain([0,
+                  d3.max(genres, function(d) {
+                    return d3.max(d.values, function(e) {
+                        return e.Count;
+                    });
+                  })
+        ]);
+
+
+
+        // start plotting the lines for the individual genres
+        var single_genre = svg.selectAll('.genre')
+            .data(genres)
+        .enter().append('g')
+            .attr('class', 'genre');
+
+        single_genre.append('path')
+            .attr('class', 'line')
+            .attr('d', function(d) {return line(d.values); })
+            .style('stroke', function(d) {return color(d.name); });
+
+
+
+        // ADDING THE DETAILS ON DEMAND HERE
+        var focus = svg.append('g')
+            .attr('width', width)
+            .attr('height', height);
+        // 7 circles and texts for 7 categories
+        fields.forEach(function(d,i) {
+            focus.append('circle')
+                .attr('class', 'y' + i)
+                .attr('r', 3);
+            focus.append('text')
+                .attr('class', 'y' + i);
+        });
+
+        // date bisector
+        var bisectDate = d3.bisector(function(d) {return d.year; }).left;
+        // and our mouseover function
+        function mousemove() {
+            var x0 = x.invert(d3.mouse(this)[0]);
+            var i = bisectDate(genres[0].values, x0, 1);
+            var d0 = genres[0].values[i - 1];
+            var d1 = genres[0].values[i];
+            var true_idx = x0 - d0.year > d1.year - x0 ? i + 1 : i;
+
+            // loop thru the fields
+            fields.forEach(function(d, i) {
+                var vals = genres[i].values[true_idx];
+                focus.select('circle.y' + i)
+                    .attr('transform', 'translate(' + x(vals.year) + ',' + y(vals.Count) + ')')
+                    .attr('stroke', color(genres[i].name));
+                focus.select('text.y' + i)
+                    .attr('transform', 'translate(150,' + (37 + (20*i)) + ')')
+                    .text(vals.Count);
+            })
+
+        }
+
+        // add the mouseover
+        svg.append('rect')
+            .attr('class', 'overlay')
+            .attr('width', width)
+            .attr('height', height)
+            .on('mouseover', function() {focus.style('display', null); })
+            .on('mouseout', function() {focus.style('display', 'none'); })
+            .on('mousemove', mousemove);
+
+
+
+        // axis plotting extras
+        // x-axis
+        svg.append('g')
+            .attr('class', 'x axis')
+            .attr('transform', 'translate(0,' + height + ')')
+            .call(xAxis)
+        .append('text')
+            .attr('x', width / 2)
+            .attr('y', 50)
+            .style('text-anchor', 'middle')
+            .text('Year');
+        // y-axis
+        svg.append('g')
+            .attr('class', 'y axis')
+            .call(yAxis)
+        .append('text')
+            .attr('x', 10)
+            .text('Count of Movie Genres');
+        // title
+        svg.append('text')
+            .attr('x', width / 2)
+            .attr('y', -margin.top / 2)
+            .style('font-size', '20px')
+            .style('text-anchor', 'middle')
+            .text('Movie Genres by Year');
+        // legend
+        var legend = svg.append('g')
+            .attr('class', 'legend');
+        legend.selectAll('rect')
+            .data(genres).enter()
+        .append('g')
+            .each(function(d,i) {
+                var g = d3.select(this);
+                g.append('rect')
+                    .attr('x', 10)
+                    .attr('y', 30 + (20*i))
+                    .attr('width', 10)
+                    .attr('height', 3)
+                    .style('fill', color(d.name));
+
+                g.append('text')
+                    .attr('x', 30)
+                    .attr('y', 37 + (20*i))
+                    .style('font-weight', 'bold')
+                    .text(d.name);
+            });
+
+
+    }
+
+
+
+
+
+
+</script>
+
+
+
 
 </body>
 
 
-
 <hr/>
-
 <footer>
+    <hr/>
     <p style="text-align: center;">Matt Shadish &bullet; MSAN 622 Information Visualization &bullet; Spring 2015</p>
 </footer>
