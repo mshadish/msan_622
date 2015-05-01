@@ -10,6 +10,7 @@
 
 
 <script src="js/d3.min.js"></script>
+<script src="js/colorbrewer.js"></script>
 <script src="js/d3.v3.min.js"></script>
 <script src="js/d3.v3.js"></script>
 <script src="js/jquery.min.js"></script>
@@ -127,6 +128,23 @@ body {
     <h2 class="header" align="center">Matt Shadish</h3>
     <h4 class="header" align="center">Source Code: <a href="https://github.com/mshadish/msan_622">github.com/mshadish/msan_622</a></h3>
 </div>
+<hr/>
+
+
+
+<div class="row">
+<h3 class="header">Data Preprocessing</h3>
+    <p>In order to generate the multiline and bar charts, I aggregated the raw movies data into counts of each genre by year.  To create the scatterplot, I did not have to aggregate or group the data in any way.  However, because many of the budgets were null, I elected to set those budgets to 0.  Although I was originally tempted to simply filter out those points, I didn't want to lose the information tied to those data points regarding film length or rating.  Instead, in order to reduce the size of the dataset being loaded by D3, I simply removed all of the irrelevant columns so I was only left with the following: title, year, length, budget, and rating.</p>
+</div>
+<hr/>
+
+
+
+<div class="row">
+<h3 class="header">User Guide</h3>
+    <p>The first dashboard is a prototype built in Tableau.  The multiline chart includes a tooltip feature that allows the user to view the exact count of a given genre at a particular point in time.  The bar chart displays the counts of each genre across all years and also include a tooltip feature that allows the user to see the exact count of a given genre.  The scatter plot also has a tooltip feature that allows the user to view the details for any given movie.</p>
+</div>
+
 
 
 
@@ -154,6 +172,36 @@ body {
         </div>
     </div>
 </div>
+<hr/>
+
+
+
+<div class="row">
+<h3 class="header">Basic Functionality</h3>
+    <ul>
+        <li>I created a simple Tableau prototype of my dashboard to display 3 charts: a scatter plot of film budget vs. length, a bar chart displaying total counts of each genre, and a multiline chart describing the number of films in a given genre in a given year.  Note the diverging color scheme in the scatter plot; I wanted to characterize the progression from poor ratings (below 5) to good ratings (above 5) as a progression from green to blue, with grey representing a moderate rating of 5.</li>
+    </ul>
+</div>
+<hr/>
+
+
+<div class="row">
+<h3 class="header">Moderate Functionality</h3>
+    <ul>
+        <li>I implemented the three charts from the Tableau prototype as three separate SVG's.</li>
+        <li>Note that, because I am loading all of the data for the scatterplot, the rendering time for that section of the dashboard can be slow.</li>
+        <li>Second note: Tableau automatically filtered out some of the extreme values for length (specifically, the longest film is over 5800 minutes, according to the data).  I did not want to exclude any data from the plot, so I transformed the film length with a logarithm operation.</li>
+    </ul>
+</div>
+<hr/>
+
+<div class="row">
+<h3 class="header">Summary</h3>
+    <p>I created a dashboard in Tableau and implemented it in JavaScript.  In the Tableau prototype, I created a multiline chart, a bar chart, and a scatter plot.  The multiline and bar charts describe summary statistics pertaining to each film genre (either by year or in aggregate), and the scatter plot is a representation of film budget vs. length for all data points.  The hope here was to see if there was any noticeable correlation between the two variables (there doesn't appear to be an obvious one, however).</p>
+    <p>The JavaScript implementation is simply three separate SVG's positioned in the same way as the Tableau dashboard.  I expanded the functionality of the tooltip in the multiline chart to display the details for every data point at a specific point in time.  I also positioned these details in a fixed spot on the chart so as to avoid creating a tooltip that obfuscated some of the data.  The bar chart is relatively similar to the Tableau prototype.</p>
+    <p>I wanted to note a few things about the scatter plot.  First, because it must load all of the movies data, the rendering of the scatter plot is relatively slow.  Second, I was unable to create a similar diverging color scale as I had in the Tableau prototype, so I stuck with a single sequential color scheme.  However, due to the sheer number of data points, even when the opacity and dot sizes are adjusted, the visual effects of this color scaling are essentially lost.  Third, in order to display all data points, I had to transform the film lengths logarithmically before plotting.</p>
+</div>
+
 
 
 <script>
@@ -181,6 +229,7 @@ body {
         genLinePlot(data_set);
         genFreqPlot(data_set);
     })
+    
     
     // raw data for our bubble plots
     d3.csv('data/movies.csv', function(error, data) {
@@ -213,7 +262,8 @@ body {
         // initialize our x, y, and colors
         var x = d3.time.scale().range([0, width]);
         var y = d3.scale.linear().range([height, 0]);
-        var color = d3.scale.category10();
+        //var color = d3.scale.category10();
+        var color = d3.scale.ordinal().range(colorbrewer.Dark2[7]);
 
         // scaling functions
         var xAxis = d3.svg.axis()
@@ -389,7 +439,8 @@ body {
         //var yScale = d3.scale.log()
             .range([height, 0]);
         var colorScale = d3.scale.linear()
-            .range(['#deebf7','#9ecae1', '#3182bd']);
+            .range(['#deebf7', '#3182bd'])
+            .interpolate(d3.interpolate);
         // axis callback functions
         var xAxis = d3.svg.axis()
             .scale(xScale)
@@ -602,10 +653,6 @@ body {
             .style('font-weight', 'bold')
             .text('Total Genre Frequencies');
     }
-
-
-
-
 
 
 </script>
