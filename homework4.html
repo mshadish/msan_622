@@ -34,6 +34,17 @@ body {
     shape-rendering: crispEdges;
 }
 
+.axis {
+    font: 12px sans-serif;
+}
+
+.bar {
+    fill: steelblue;
+}
+.bar:hover {
+    fill: black;
+}
+
 .dot {
     stroke: #000;
     opacity: 0.3;
@@ -42,12 +53,13 @@ body {
 .d3-tip {
     line-height: 1;
     font-weight: bold;
-    width: 250px;
+    /*width: 250px;*/
     text-align: center;
     padding: 4px;
     background: rgba(0,0,0,0.8);
     color: #fff;
     border-radius: 2px;
+    shape-rendering: crispEdges;
 }
 
 .d3-tip:after {
@@ -129,17 +141,17 @@ body {
 
 
 
-
-<div class="a">
-        <h2 class="page-header" align="center"><a name="about"></a>D3 Dashboard</h2>
-</div>
-
-<div class="b">
-    <div class="col-md-6" id="left">
-        <p>Budget vs. Number of Votes</p>
+<div class="row">
+    <div class="a">
+            <h2 class="page-header" align="center"><a name="about"></a>D3 Dashboard</h2>
     </div>
 
-    <div class="col-md-6" id="right">
+    <div class="b">
+        <div class="col-md-6" id="left">
+        </div>
+
+        <div class="col-md-6" id="right">
+        </div>
     </div>
 </div>
 
@@ -167,9 +179,9 @@ body {
         });
 
         genLinePlot(data_set);
+        genFreqPlot(data_set);
     })
     
-
     // raw data for our bubble plots
     d3.csv('data/movies.csv', function(error, data) {
         if (error) {
@@ -180,7 +192,6 @@ body {
         data_set_raw = data;
         genBubblePlotBudgetVLength(data_set_raw);
     })
-
 
 
 
@@ -320,13 +331,17 @@ body {
             .attr('x', width / 2)
             .attr('y', 50)
             .style('text-anchor', 'middle')
+            .style('font-size', '14px')
             .text('Year');
         // y-axis
         svg.append('g')
             .attr('class', 'y axis')
             .call(yAxis)
         .append('text')
-            .attr('x', 10)
+            .attr('x', margin.left/2)
+            .attr('y', -margin.top/2)
+            .style('font-size', '14px')
+            .style('text-anchor', 'middle')
             .text('Count of Movie Genres');
         // title
         svg.append('text')
@@ -437,6 +452,7 @@ body {
         var tip_obj = d3.tip()
             .attr('class', 'd3-tip')
             .attr('id', 'tip_obj')
+            .attr('width', '250px')
             .offset([-10, 0])
             .html(function(d) {
                 return "<span style='color:white'>" + d['title'] + "<br>Budget: $" + d[x_name] + "<br>Length: " + d[y_name] + "<br>Rating: " + d[color_name] + "</span>";
@@ -454,6 +470,7 @@ body {
         .append('text')
             .attr('x', width / 2)
             .attr('y', 40)
+            .style('font-size', '14px')
             .text(x_name.charAt(0).toUpperCase() + x_name.substr(1));
 
         // y-axis
@@ -463,6 +480,7 @@ body {
         .append('text')
             .attr('x', -margin.left/2)
             .attr('y', -10)
+            .style('font-size', '14px')
             .text('log(' + (y_name.charAt(0).toUpperCase() + y_name.substr(1)) + ')');
 
         // title
@@ -473,9 +491,116 @@ body {
             .style('font-weight', 'bold')
             .style('text-anchor', 'middle')
             .text('Film Budget vs. Length, with Rating');
+    }
 
 
 
+    // plotting our genre frequencies
+    function genFreqPlot(data) {
+        // plot set-up
+        var margin = {top: 60, right: 20, bottom: 50, left: 50};
+        var width = 550 - margin.left - margin.right;
+        var height = 300 - margin.top - margin.bottom;
+
+        // axis scalings
+        var xScale = d3.scale.ordinal()
+            .rangeRoundBands([0, width], 0.1);
+        var yScale = d3.scale.linear()
+            .range([height, 0]);
+        // axis callback functions
+        var xAxis = d3.svg.axis()
+            .scale(xScale)
+            .orient('bottom');
+        var yAxis = d3.svg.axis()
+            .scale(yScale)
+            .ticks(5)
+            .orient('left');
+
+        // create the svg
+        var svg = d3.select('div.b').select('div#left').append('svg')
+            .attr('width', width + margin.left + margin.right)
+            .attr('height', height + margin.top + margin.bottom)
+        .append('g')
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+
+
+
+
+        // we need to transform our data such that we have sums for each genre
+        var first_entry = Object.keys(data[0]);
+        var fields = first_entry.filter(function(d) {return d !== 'year'; });
+
+        // initialize our counter
+        var freq_counter = {};
+        fields.forEach(function(d) {
+            freq_counter[d] = 0;
+        });
+        // compute the sum for each genre
+        data.forEach(function(d) {
+            fields.forEach(function(e) {
+                freq_counter[e] = freq_counter[e] + Number(d[e]);
+            })
+        });
+        // and convert to a d3 variable
+        var d3List = d3.entries(freq_counter);
+        // with this data, let's compute our domains
+        xScale.domain(d3List.map(function(i) {return i.key; }));
+        yScale.domain([0, d3.max(d3List, function(j) {return j.value; })]);
+
+        // and plot
+        bars = svg.selectAll('.bar')
+            .data(d3List)
+        .enter().append('rect')
+            .attr('class', 'bar')
+            .attr('x', function(d) {return xScale(d.key); })
+            .attr('y', function(d) {return yScale(d.value); })
+            .attr('width', xScale.rangeBand())
+            .attr('height', function(d) {return height - yScale(d.value); });
+
+
+        // also want to add a tooltip
+        var tip_obj = d3.tip()
+            .attr('class', 'd3-tip')
+            .offset([-7, 0])
+            .attr('width', '50px')
+            .html(function(d) {
+                return "<span style='color:white'>" + d.value + "</span>";
+            });
+        svg.call(tip_obj);
+
+        bars.on('mouseover', tip_obj.show)
+            .on('mouseout', tip_obj.hide);
+
+        // axis stuff
+        // x-axis
+        svg.append('g')
+            .attr('class', 'x axis')
+            .attr('transform', 'translate(0,' + height + ')')
+            .call(xAxis)
+        .append('text')
+            .attr('x', (width / 2) - margin.right)
+            .attr('y', margin.bottom - 10)
+            .style('font-size', '14px')
+            .text('Genres');
+        // y-axis
+        svg.append('g')
+            .attr('class', 'y axis')
+            .call(yAxis)
+        .append('text')
+            .attr('x', -margin.left/2)
+            .attr('y', -margin.top/4)
+            .style('font-size', '14px')
+            .text('Frequency');
+
+        // title
+        svg.append('text')
+            .attr('x', width/2)
+            .attr('y', -margin.top/2)
+            .style('text-anchor', 'middle')
+            .style('font-size', '18px')
+            .style('font-weight', 'bold')
+            .text('Total Genre Frequencies');
     }
 
 
@@ -488,10 +613,7 @@ body {
 
 
 
-</body>
 
-
-<hr/>
 <footer>
     <hr/>
     <p style="text-align: center;">Matt Shadish &bullet; MSAN 622 Information Visualization &bullet; Spring 2015</p>
