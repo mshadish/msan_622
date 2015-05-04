@@ -1,0 +1,201 @@
+<!-- Matt Shadish -->
+
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+
+
+
+<style type="text/css">
+body {
+    padding-top: 80px;
+    padding-bottom: 20px;
+    padding-left: 30px;
+    padding-right: 30px;
+    background-color: whitesmoke;
+    margin: 8px 10px;
+    font: 16px sans-serif;
+}
+
+
+
+svg {
+    background-color: white;
+    margin: 0px;
+    float: left;
+}
+
+#block {
+    max-width: 950px;
+}
+
+#log {
+    color: dimgray;
+
+    font-size: 10px;
+    font-style: italic;
+    text-align: center;
+
+    margin: 0px;
+    padding: 0px;
+}
+
+.country {
+    fill: gainsboro;
+}
+
+.state {
+    fill: none;
+}
+
+/*
+ * Setting "opacity" can affect both
+ * fill and stroke. We want to set
+ * both of those separately.
+ */
+
+.symbol {
+    fill: royalblue;
+    fill-opacity: 0.25;
+
+    stroke: royalblue;
+    stroke-width: 1px;
+    stroke-opacity: 1.0;
+}
+
+/*
+ * We can specify how to highlight based
+ * on the type of underlying object.
+ */
+
+circle.highlight {
+    stroke: orangered;
+    stroke-width: 2px;
+}
+
+path.highlight {
+    fill: whitesmoke;
+
+    stroke: tomato;
+    stroke-width: 1px;
+}
+
+</style>
+
+
+
+
+<head>
+    <meta charset="utf-8">
+    <title>Homework 5: Earthquakes Visualization</title>
+
+    <!-- load D3 and TopoJSON //-->
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="http://d3js.org/topojson.v1.min.js"></script>
+
+    <script src="js/homework5.js"></script>
+
+
+ </head>
+
+<body>
+
+
+
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle Navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="index.html">MSAN 622</a>
+        </div>
+
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li><a href="index.html#homework">Homework</a></li>
+                <li><a href="index.html#project">Project</a></li>
+                <li><a href="index.html#participation">Participation</a></li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="index.html#about">About</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+
+
+<div id="block">
+<svg id="map" width="920" height="920"></svg>
+<p id="log">Loading map... please wait.</p>
+</div>
+
+<script>
+/*
+ * For sample TopoJSON files, go to:
+ * https://gist.github.com/mbostock/4090846
+ */
+ /*
+var base = "https://gist.githubusercontent.com/mbostock/4090846/raw/";
+var url = {
+    world: base + "world-110m.json", // renamed from country
+    //states:  base + "us-state-names.tsv",
+    earthquakes:  "earthquakes.csv" // relative URL ; renamed from precip
+};
+*/
+var url = {
+    world: "data/world-110m.json",
+    earthquakes: "data/earthquakes.csv"
+};
+
+// Uses reusable chart model
+// See http://bost.ocks.org/mike/chart/
+var chart = symbolMap();
+
+// Update how we access data (need the precip property)
+chart = chart.value(function(d) { return d.mag; });
+
+// Nested calls to trigger drawing in proper order
+d3.json(url.world, function(mapError, mapJSON) {
+    if (processError(mapError)) return;
+
+    // update map data
+    chart = chart.map(mapJSON);
+
+    // Wait until the map is drawn before loading
+    // and drawing the data values
+    d3.csv(url.earthquakes, function(dataError, dataJSON) {
+        if (processError(dataError)) return;
+
+        chart = chart.values(dataJSON);
+        chart("map");
+    });
+});
+
+
+</script>
+
+
+
+
+</body>
+
+
+<footer>
+    <hr/>
+    <p style="text-align: center;">Matt Shadish &bullet; MSAN 622 Information Visualization &bullet; Spring 2015</p>
+</footer>
+
+
+</html>
