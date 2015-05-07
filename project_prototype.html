@@ -1,0 +1,159 @@
+<!-- Matt Shadish -->
+
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+
+
+<script src="js/d3.min.js"></script>
+<script src="js/colorbrewer.js"></script>
+<script src="js/d3.v3.min.js"></script>
+<script src="js/d3.v3.js"></script>
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/d3.tip.v0.6.3.js"></script>
+<script src="js/project_prototype.js"></script>
+
+
+<style type="text/css">
+body {
+    padding-top: 80px;
+    padding-bottom: 20px;
+    padding-left: 50px;
+    padding-right: 50px;
+    font: 16px sans-serif;
+}
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+
+.year.label {
+    font: 500 20px "Helvetica Neue";
+    fill: #000;
+}
+
+
+.overlay {
+    fill: none;
+    pointer-events: all;
+}
+
+}
+
+
+</style>
+
+
+
+<body>
+
+
+
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle Navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="index.html">MSAN 622</a>
+        </div>
+
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li><a href="index.html#homework">Homework</a></li>
+                <li><a href="index.html#project">Project</a></li>
+                <li><a href="index.html#participation">Participation</a></li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="index.html#about">About</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+
+<div class="row">
+    <h1 class="header" align="center">Project Prototype</h1>
+    <h4 class="header" align="center">Matt Shadish</h4>
+<hr/>
+
+
+
+
+<div class="row">
+<h2 class="header">Dataset Summary</h2>
+    <p>As described on the <a href="project_dataset.html">Project Dataset</a> page, this dataset outlines the expenditures on healthcare by country annually from 1995 to 2012.  Each observation represents a snapshot of the healthcare expenditures of a given country for a particular year.  Excluding the country and year, the data consists of 9 features, all of which are expressed as percentages.  These features are meant to help explore how much/little is spent on healthcare by each country.  As an example, some of the features include names like <i>total expenditure on health as a percentage of GDP</i>, <i>private expenditure on health as a percentage of total expenditure on health</i>, and <i>out-of-pocket expenditure as a percentage of private expenditure on health</i>.  Some quick univariate analysis shows wide variation in the distributions of each feature, with some features heavily right-skewed (i.e., <i>social security spending on health as a percentage of general government spending on health</i>) and others displaying more of a bell-shape (i.e., <i>general government expenditure on health as a percentage of total health spending</i>).</p>
+    <p>In my visualizations, I want to take advantage of the fact that all of the features are represented on the same scale.  As such, one core feature I would like to implement in these visualizations is the ability to change the variables being displayed at will.  Because all 9 of the features can only take on values between 0% and 100%, there shouldn't be any problems visually with transitions among the different features (assuming I can implement this functionality properly).</p>
+</div>
+<hr/>
+
+
+<div class="row">
+<h2 class="header">Sketch Summary</h2>
+    <p>As displayed on the <a href="project_sketch.html">Project Sketch</a> page, I have created three sketches of the concepts I have in mind.  The first sketch (which is what I am prototyping) is a bubble plot of any two features chosen by the user.  Each bubble will be scaled according to the given country's GDP, which will need to be pulled in from an outside source.  Since this was inspired by Hans Rosling's demonstration of the Wealth and Health of Nations, I will also include the time component that will transition the data points accordingly.</p>
+    <p>The second and third sketches are, respectively, a parallel coordinate plot and a multi-line time series chart.  These will employ similar techniques regarding display feature selection by the user and transitions over time.</p>
+</div>
+<hr/>
+
+
+
+<div class="row">
+
+    <div class="a">
+        <div class="col-md-8" id="left">
+            <svg id="a" width="850" height="500"></svg>
+        </div>
+
+        <div class="col-md-4" id="right">
+            <h4 class="header" align="center">X Axis</h4>
+            <select id="x-axis">
+              <option id="Gov_to_total_spending" value="Gov_to_total_spending">Gov health spend / Total health spend</option>
+              <option id="Gov_to_total_gov" value="Gov_to_total_gov">Gov health spend / Total gov spend</option>
+              <option id="Outofpocket_to_private" value="Outofpocket_to_private">Out-of-pocket health spend / Private health spend</option>
+              <option id="Outofpocket_to_total_spending" value="Outofpocket_to_total_spending">Out-of-pocket health spend / Total health spend</option>
+              <option id="Private_prepaid_to_private_spending" value="Private_prepaid_to_private_spending">Private prepaids plans / Private health spend</option>
+              <option id="Private_spending_to_total_spending" value="Private_spending_to_total_spending">Private health spend / Total health spend</option>
+              <option id="Soc_sec_to_gov_health_spending" value="Soc_sec_to_gov_health_spending" selected="selected">Social security health spend / Gov health spend</option>
+              <option id="Total_spending_to_GDP" value="Total_spending_to_GDP">Total health spend / GDP</option>
+              <option id="Ext_resources_to_total_spending" value="Ext_resources_to_total_spending">External resources for health / Total health spend</option>
+            </select>
+
+            <h4 class="header" align="center">Y Axis</h4>
+            <select id="y-axis">
+              <option id="Gov_to_total_spending" value="Gov_to_total_spending">Gov health spend / Total health spend</option>
+              <option id="Gov_to_total_gov" value="Gov_to_total_gov">Gov health spend / Total gov spend</option>
+              <option id="Outofpocket_to_private" value="Outofpocket_to_private">Out-of-pocket health spend / Private health spend</option>
+              <option id="Outofpocket_to_total_spending" value="Outofpocket_to_total_spending" selected="selected">Out-of-pocket health spend / Total health spend</option>
+              <option id="Private_prepaid_to_private_spending" value="Private_prepaid_to_private_spending">Private prepaids plans / Private health spend</option>
+              <option id="Private_spending_to_total_spending" value="Private_spending_to_total_spending">Private health spend / Total health spend</option>
+              <option id="Soc_sec_to_gov_health_spending" value="Soc_sec_to_gov_health_spending">Social security health spend / Gov health spend</option>
+              <option id="Total_spending_to_GDP" value="Total_spending_to_GDP">Total health spend / GDP</option>
+              <option id="Ext_resources_to_total_spending" value="Ext_resources_to_total_spending">External resources for health / Total health spend</option>
+            </select>
+        </div>
+    </div>
+
+
+</div>
+
+
+
+
+
+<footer>
+    <hr/>
+    <p style="text-align: center;">Matt Shadish &bullet; MSAN 622 Information Visualization &bullet; Spring 2015</p>
+</footer>
