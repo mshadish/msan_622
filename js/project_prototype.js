@@ -11,7 +11,7 @@ function testing() {
 
 
 // read in the data
-d3.json('/data/who_data_merged.json', function(error, data) {
+d3.json('data/who_data_merged.json', function(error, data) {
 	if (error) {
 		console.warn(error);
 		return
