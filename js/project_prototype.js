@@ -1,6 +1,7 @@
 // initialize the data set
 var data_set;
 
+var test_global;
 
 /*
 function testing() {
@@ -19,6 +20,8 @@ d3.json('data/who_data_merged.json', function(error, data) {
 
 	data_set = data;
     genBubblePlot(data_set);
+
+    genParallelPlot(data_set);
 });
 
 
@@ -27,7 +30,7 @@ d3.json('data/who_data_merged.json', function(error, data) {
 // note that we'll have to take into account the ability to change the x- and y-axes
 
 // for now, we'll just focus on the time component
-function genBubblePlot(data, x_field, y_field) {
+function genBubblePlot(data) {
     
     // define the x and y fields
     var x_field = 'Soc_sec_to_gov_health_spending';
@@ -272,4 +275,167 @@ function genBubblePlot(data, x_field, y_field) {
 
         console.log(document.getElementById('bubble_y_axis').innerHTML);
     };
+}
+
+
+// parallel coordinates
+function genParallelPlot(data) {
+    // specify the fields here to make our lives easier
+    /*
+    var fields = ['External resources for health / total spending on health',
+        'Gov spending on health / total gov spending',
+        'Gov spending on health / total spending on health',
+        'Out-of-pocket spending / private spending on health',
+        'Out-of-pocket spending / total spending on health',
+        'Private prepaid plans / private spending on health',
+        'Private spending on health / total spending on health',
+        'Soc security spending on health / gov spending on health',
+        'Total spending on health / GDP'];
+    */
+
+    // note: we have temporarily removed GDP
+    var fields = ['GDP', 'Ext_resources_to_total_spending','Gov_to_total_gov',
+        'Gov_to_total_spending','Outofpocket_to_private','Outofpocket_to_total_spending',
+        'Private_prepaid_to_private_spending','Private_spending_to_total_spending',
+        'Soc_sec_to_gov_health_spending','Total_spending_to_GDP']
+
+
+    // set the margins
+    var margin = {top: 80, left: 50, bottom: 10, right: 10};
+    var width = 1100 - margin.left - margin.right;
+    var height = 500 - margin.top - margin.bottom;
+
+    // specify the different scalings
+    var x = d3.scale.ordinal().rangePoints([0, width], 1);
+    var colorScale = d3.scale.category10();
+    var y = {};
+    var dragging = {};
+
+    // line generator
+    var line = d3.svg.line();
+    // set the axes
+    var axis = d3.svg.axis().orient("left");
+    var background;
+    var foreground;
+
+    // initialize the svg
+    var svg = d3.select("svg#b")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .style('padding', 30)
+    .append("g")
+        .attr("transform", "translate(" + margin.left + "," + 40 + ")");
+
+    // make the title
+    /*
+    svg.append('text')
+        .attr('x', width / 2)
+        .attr('y', -margin.top / 2)
+        .attr('text-anchor', 'middle')
+        .style('font-size', '20px')
+        .text('Health Spend Data, Parallel Coordinates');
+    */
+
+
+    // let's specify the dimensions of the parallel plot
+    x.domain(dimensions = fields);
+    // for each y axis, set the scale from 0 to 100
+    fields.forEach(function(d) {
+        if (d === 'GDP') {
+            y[d] = d3.scale.log().domain([1e7, 9e12]).range([height, 0]);
+        } else {
+            y[d] = d3.scale.linear().domain([0,100]).range([height, 0]);
+        }
+    });
+
+
+    // now, add the background for our data
+    background = svg.append('g')
+        .attr('class', 'background')
+    .selectAll('path')
+        .data(interpolateData(1995))
+    .enter().append('path')
+        .attr('d', path);
+
+
+
+    // bisector
+    var bisect = d3.bisector(function(d) {return d[0]; });
+
+    // data interpolation function
+    function interpolateData(year) {
+        return data.map(function(d) {
+            return {
+                Country: d.Country,
+                GDP: interpolateValues(d['GDP'], year, 1e7),
+                Ext_resources_to_total_spending: interpolateValues(d['External resources for health / total spending on health'], year),
+                Gov_to_total_gov: interpolateValues(d['Gov spending on health / total gov spending'], year),
+                Gov_to_total_spending: interpolateValues(d['Gov spending on health / total spending on health'], year),
+                Outofpocket_to_private: interpolateValues(d['Out-of-pocket spending / private spending on health'], year),
+                Outofpocket_to_total_spending: interpolateValues(d['Out-of-pocket spending / total spending on health'], year),
+                Private_prepaid_to_private_spending: interpolateValues(d['Private prepaid plans / private spending on health'], year),
+                Private_spending_to_total_spending: interpolateValues(d['Private spending on health / total spending on health'], year),
+                Soc_sec_to_gov_health_spending: interpolateValues(d['Soc security spending on health / gov spending on health'], year),
+                Total_spending_to_GDP: interpolateValues(d['Total spending on health / GDP'], year)
+            };
+        });
+    }
+
+    // make the axis titles
+    var g = svg.selectAll('.dimension')
+        .data(dimensions)
+    .enter().append('g')
+        .attr('class', 'dimension')
+        .attr('transform', function(d) {return 'translate(' + x(d) + ')'; });
+
+    g.append('g')
+        .attr('class', 'axis')
+        .each(function(d) {d3.select(this).call(axis.scale(y[d])); })
+        ;
+ /*   .append('text')
+        .attr('text-anchor', 'middle')
+        .attr('y', -9)
+        .text(function(String) {
+            return String;
+        });
+*/
+
+    // interpolate values
+    function interpolateValues(values, year, min_val) {
+        // if it's empty, here we'll set it to 0
+        if (values.length === 0) {
+            min_val = typeof min_val !== 'undefined' ? min_val : 0;
+            return min_val;
+        }
+
+        var val =  values[0][1];
+        return val;
+
+        var i = bisect.left(values, year, 0, values.length - 1);
+        var a = values[i];
+
+        if (i > 0) {
+            var b = values[i - 1];
+            var t = (year - a[0]) / (b[0] - a[0]);
+            return a[1] * (1-t) + b[1] * t;
+        }
+        // otherwise...
+        return a[1];
+    }
+
+
+
+    // position function
+    function position(d) {
+        return x(d);
+    }
+
+    // define the path function
+    function path(d) {
+        return line(dimensions.map(function(p) {
+            return [position(p), y[p](d[p])];
+        }));
+    }
+
+
 }

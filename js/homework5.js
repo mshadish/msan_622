@@ -166,6 +166,12 @@ function symbolMap() {
                 .style('fill', i === 0 ? 'none' : 'black');
         });
 
+        // add text
+        key.append('text')
+            .attr('x', -20)
+            .attr('y', '-20')
+            .text('Depth');
+
 
 
     }
@@ -305,9 +311,13 @@ function symbolMap() {
                 "state": true
             });
 
-        updateLog(d.city + ", " + d.state +
-            " received an average of " + d.precip +
-            " inches of precipitation.");
+        // updateLog(d.mag + ", " + d.mag +
+        //     " received an average of " + d.precip +
+        //     " inches of precipitation.");
+
+        updateLog("Earthquake with magnitude of " + d.mag +
+                ", depth of " + d.depth +
+                ", location: " + d.place);
     }
 
     // called on mouseout

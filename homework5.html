@@ -135,11 +135,53 @@ path.highlight {
 
 
 
-
-<div id="block">
-<svg id="map" width="920" height="920"></svg>
-<p id="log">Loading map... please wait.</p>
+<div class="row">
+    <h2 class="header" align="center">Matt Shadish</h3>
+    <h4 class="header" align="center">Source Code: <a href="https://github.com/mshadish/msan_622">github.com/mshadish/msan_622</a></h3>
 </div>
+<hr/>
+
+
+<div class="row">
+<h3 class="header">User Guide</h3>
+    <p>Shown below is a simple plot of the world and geo-positioned earthquakes with a magnitude exceeding 4.5.  The radii of the points specifiying earthquake positions are scaled based on the magnitude of the earthquake, and the color is scaled according to the depth of the earthquake, as outlined by the legend.  When the user hovers over any given earthquake point, the details of that earthquake are shown at the bottom of the plot (in particular, I display: magnitude, depth, and location).</p>
+</div>
+<hr/>
+
+
+
+<div class="row">
+    <svg id="map" width="920" height="920"></svg>
+</div>
+
+<div class="row">
+    <div class="col-md-10">
+        <p id="log">Loading map... please wait.</p>
+    </div>
+</div>
+<hr/>
+
+
+<div class="row">
+<h3 class="header">Basic Functionality</h3>
+<ul>
+    <li>I modified the code to use the <i>world-110m.json</i> file in conjunction with the <i>earthquakes.csv</i> dataset.</li>
+    <li>I also re-formatted the text output at the bottom of the chart to reflect the attributes of the earthquakes.</li>
+</ul>
+</div>
+<hr/>
+
+
+<div class="row">
+<h3 class="header">Moderate Functionality</h3>
+<ul>
+    <li>I used a threshold color scale to color the earthquakes by their depth.</li>
+    <li>Accompanying this color scale is a legend specifying the thresholds for the chosen color scheme.</li>
+</ul>
+</div>
+
+
+
 
 <script>
 /*
