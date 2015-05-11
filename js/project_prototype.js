@@ -80,7 +80,7 @@ function genBubblePlot(data) {
         .attr('x', (width)/2)
         .attr('y', 40)
         .style('text-anchor', 'middle')
-        .text(x_field);
+        .text('X');
 
 	// Add the y-axis.
 	svg.append("g")
@@ -88,10 +88,10 @@ function genBubblePlot(data) {
 	    .call(yAxis)
     .append('text')
         .attr('id', 'bubble_y_axis')
-        .attr('x', 50)
+        .attr('x', 0)
         .attr('y', -margin.top/2)
         .style('text-anchor', 'middle')
-        .text(y_field);
+        .text('Y');
 
     // Add a title
     svg.append('text')
@@ -100,7 +100,7 @@ function genBubblePlot(data) {
         .style('text-anchor', 'middle')
         .style('font-size', 24)
         .style('font-weight', 'bold')
-        .text('Title Here');
+        .text('Health Spend, by country');
 
     // add the year label
     var label = svg.append('text')
@@ -239,6 +239,13 @@ function genBubblePlot(data) {
     }
 
 
+    // Defines a sort order so that the smallest dots are drawn on top.
+    function order(a, b) {
+      return b['GDP'] - a['GDP'];
+    }
+
+
+
 
     // start adding the dots
     var dot = svg.append('g')
@@ -247,7 +254,8 @@ function genBubblePlot(data) {
         .data(interpolateData(1995))
     .enter().append('circle')
         .attr('class', 'dot')
-        .call(position);
+        .call(position)
+        .sort(order);
 
     // grab the x-axis selection from the html
     var x_axis_selection = document.getElementById('x-axis');
