@@ -1,14 +1,6 @@
-// initialize the data set
+// initialize the data set as a global
+// FOR DEBUGGING PURPOSES
 var data_set;
-
-var test_global;
-
-/*
-function testing() {
-    console.log('blort found');
-}
-*/
-
 
 
 // read in the data
@@ -51,10 +43,10 @@ function genBubblePlot(data) {
     var yScale = d3.scale.linear()
     	.range([height, 0])
     	.domain([0, 100]);
-    var colorScale = d3.scale.category10();
+    var colorScale = d3.scale.ordinal().range(colorbrewer.Dark2[6]);
     var radiusScale = d3.scale.sqrt()
-        .domain([0, 10e13])
-        .range([3, 40]);
+        .domain([1e7, 9e12])
+        .range([4, 25]);
 
     // axes
     var xAxis = d3.svg.axis()
@@ -99,7 +91,7 @@ function genBubblePlot(data) {
         .attr('y', -margin.top/2)
         .style('text-anchor', 'middle')
         .style('font-size', 24)
-        .style('font-weight', 'bold')
+//        .style('font-weight', 'bold')
         .text('Health Spend, by country');
 
     // add the year label
@@ -122,15 +114,6 @@ function genBubblePlot(data) {
         .attr('width', box.width)
         .attr('height', box.height)
         .on('mouseover', userMovement);
-
-    // start the transition to do data interpolation
-    /*
-    svg.transition()
-        .duration(0)
-        .ease('linear')
-        .tween('year', tweenYear)
-        .each('end', userMovement);
-    */
 
 
     function userMovement() {
@@ -167,12 +150,13 @@ function genBubblePlot(data) {
     function yGet(d) {return d[y_field]; }
     function gdpGet(d) {return d.GDP; }
     function keyGet(d) {return d.Country; }
+    function regionGet(d) {return d.Region; }
 
     // define the position function
     function position(dot) {
         dot.attr('cx', function(d) {return xScale(xGet(d)); })
             .attr('cy', function(d) {return yScale(yGet(d)); })
-            .style('fill', function(d) {return colorScale(keyGet(d)); })
+            .style('fill', function(d) {return colorScale(regionGet(d)); })
             .attr('r', function(d) {return radiusScale(gdpGet(d)); });
     }
 
@@ -186,16 +170,11 @@ function genBubblePlot(data) {
         return function(t) {displayYear(year(t)); };
     }
 
-    // we'll keep track of the current year
-    var current_year = 1995;
 
     // display the specified year
     function displayYear(year) {
         dot.data(interpolateData(year), keyGet).call(position);
         label.text(Math.round(year));
-        // update the current year
-        current_year = year;
-        //console.log(current_year);
     }
 
     
@@ -204,7 +183,8 @@ function genBubblePlot(data) {
         return data.map(function(d) {
             return {
                 Country: d.Country,
-                GDP: interpolateValues(d['GDP'], year),
+                Region: d.Region,
+                GDP: interpolateValues(d['GDP'], year, 1e7),
                 Ext_resources_to_total_spending: interpolateValues(d['External resources for health / total spending on health'], year),
                 Gov_to_total_gov: interpolateValues(d['Gov spending on health / total gov spending'], year),
                 Gov_to_total_spending: interpolateValues(d['Gov spending on health / total spending on health'], year),
@@ -220,22 +200,37 @@ function genBubblePlot(data) {
     
 
     // interpolate values
-    function interpolateValues(values, year) {
-        // if it's empty, we'll want to plot the result off-screen
+    function interpolateValues(values, year, min_val) {
+        // if it's empty, here we'll set it to 0
         if (values.length === 0) {
-            return -100;
+            min_val = typeof min_val !== 'undefined' ? min_val : 0;
+            return min_val;
         }
 
+        
         var i = bisect.left(values, year, 0, values.length - 1);
+
+        // take the leading record
         var a = values[i];
 
-        if (i > 0) {
+        // initialize our return value
+        var return_val;
+        // we need to check that the year does not exceed the maximum year
+        if (i > 0 && year < a[0]) {
+            // preceding record
             var b = values[i - 1];
+            // compute the weighting
             var t = (year - a[0]) / (b[0] - a[0]);
-            return a[1] * (1-t) + b[1] * t;
+            // and weight our return value
+            return_val = a[1] * (1-t) + b[1] * t;
+        // otherwise, set the return value to the maximum record
+        } else {
+            return_val = a[1];
         }
-        // otherwise...
-        return a[1];
+
+
+        return return_val;
+
     }
 
 
@@ -279,28 +274,18 @@ function genBubblePlot(data) {
         dot.transition()
             .duration(1500)
         .call(position);
-//        console.log(document.getElementById(y_field).innerText);
 
-        console.log(document.getElementById('bubble_y_axis').innerHTML);
+        //console.log(document.getElementById('bubble_y_axis').innerHTML);
     };
 }
 
+/*
+=====================
+PARALLEL COORDINATES
+=====================
+*/
 
-// parallel coordinates
 function genParallelPlot(data) {
-    // specify the fields here to make our lives easier
-    /*
-    var fields = ['External resources for health / total spending on health',
-        'Gov spending on health / total gov spending',
-        'Gov spending on health / total spending on health',
-        'Out-of-pocket spending / private spending on health',
-        'Out-of-pocket spending / total spending on health',
-        'Private prepaid plans / private spending on health',
-        'Private spending on health / total spending on health',
-        'Soc security spending on health / gov spending on health',
-        'Total spending on health / GDP'];
-    */
-
     // note: we have temporarily removed GDP
     var fields = ['GDP', 'Ext_resources_to_total_spending','Gov_to_total_gov',
         'Gov_to_total_spending','Outofpocket_to_private','Outofpocket_to_total_spending',
@@ -309,20 +294,20 @@ function genParallelPlot(data) {
 
 
     // set the margins
-    var margin = {top: 80, left: 50, bottom: 10, right: 10};
+    var margin = {top: 80, left: 50, bottom: 30, right: 40};
     var width = 1100 - margin.left - margin.right;
     var height = 500 - margin.top - margin.bottom;
 
     // specify the different scalings
     var x = d3.scale.ordinal().rangePoints([0, width], 1);
-    var colorScale = d3.scale.category10();
+    var colorScale = d3.scale.ordinal().range(colorbrewer.Dark2[6]);
     var y = {};
     var dragging = {};
 
     // line generator
     var line = d3.svg.line();
     // set the axes
-    var axis = d3.svg.axis().orient("left");
+    var axis = d3.svg.axis().orient("left").ticks(5);
     var background;
     var foreground;
 
@@ -335,14 +320,12 @@ function genParallelPlot(data) {
         .attr("transform", "translate(" + margin.left + "," + 40 + ")");
 
     // make the title
-    /*
     svg.append('text')
         .attr('x', width / 2)
         .attr('y', -margin.top / 2)
         .attr('text-anchor', 'middle')
         .style('font-size', '20px')
         .text('Health Spend Data, Parallel Coordinates');
-    */
 
 
     // let's specify the dimensions of the parallel plot
@@ -356,25 +339,25 @@ function genParallelPlot(data) {
         }
     });
 
+    // bisector
+    var bisect = d3.bisector(function(d) {return d[0]; });
 
-    // now, add the background for our data
-    background = svg.append('g')
-        .attr('class', 'background')
+    // we will only use a foreground, to reduce the amount of data processing necessary
+    foreground = svg.append('g')
+        .attr('class', 'foreground')
     .selectAll('path')
         .data(interpolateData(1995))
     .enter().append('path')
-        .attr('d', path);
+        .attr('d', path)
+        .style('stroke', function(d) {return colorScale(d.Region); });
 
-
-
-    // bisector
-    var bisect = d3.bisector(function(d) {return d[0]; });
 
     // data interpolation function
     function interpolateData(year) {
         return data.map(function(d) {
             return {
                 Country: d.Country,
+                Region: d.Region,
                 GDP: interpolateValues(d['GDP'], year, 1e7),
                 Ext_resources_to_total_spending: interpolateValues(d['External resources for health / total spending on health'], year),
                 Gov_to_total_gov: interpolateValues(d['Gov spending on health / total gov spending'], year),
@@ -398,15 +381,82 @@ function genParallelPlot(data) {
 
     g.append('g')
         .attr('class', 'axis')
-        .each(function(d) {d3.select(this).call(axis.scale(y[d])); })
-        ;
- /*   .append('text')
+        .each(function(d, i) {
+            d3.select(this).call(axis.scale(y[d]));
+        })
+        .append('text')
         .attr('text-anchor', 'middle')
-        .attr('y', -9)
-        .text(function(String) {
-            return String;
-        });
-*/
+        .each(function(d,i) {
+            if (i % 2 === 0) {
+                d3.select(this).attr('y', -9);
+            } else {
+                d3.select(this).attr('y', height + margin.bottom - 9);
+            }
+        })
+        .style('font-size', '11px')
+        .text(String)
+        ;
+
+
+    // add the year label
+    var label = svg.append('text')
+        .attr('class', 'year label')
+        .attr('text-anchor', 'end')
+        .attr('y', 0)
+        .attr('x', 0)
+        .text(1995);
+
+
+    // add an overlay for the box
+    var box = label.node().getBBox();
+
+
+    var overlay = svg.append('rect')
+        .attr('class', 'overlay')
+        .attr('x', box.x)
+        .attr('y', box.y)
+        .attr('width', box.width)
+        .attr('height', box.height)
+        .on('mouseover', userMovement);
+
+
+
+    // display the specified year
+    function displayYear(year) {
+        foreground.data(interpolateData(year))
+            .attr('d', path);
+        label.text(Math.round(year));
+    }
+
+
+    function userMovement() {
+
+        // define the annual scaling for user specification
+        var yearScale = d3.scale.linear()
+            .domain([1995, 2012])
+            .range([box.x + 10, box.x + box.width - 10])
+            .clamp(true);
+
+        svg.transition().duration(0);
+        // add the mouse scaling
+        overlay.on('mouseover', mouseover)
+            .on('mouseout', mouseout)
+            .on('mousemove', mousemove)
+            .on('touchmove', mousemove);
+
+        // define the mouseover, mouseout, and mousemove functions
+        function mouseover() {
+            label.classed('active', true);
+        }
+        function mouseout() {
+            label.classed('active', false);
+        }
+        function mousemove() {
+            displayYear(yearScale.invert(d3.mouse(this)[0]));
+        }
+    }
+
+
 
     // interpolate values
     function interpolateValues(values, year, min_val) {
@@ -416,19 +466,30 @@ function genParallelPlot(data) {
             return min_val;
         }
 
-        var val =  values[0][1];
-        return val;
-
+        
         var i = bisect.left(values, year, 0, values.length - 1);
+
+        // take the leading record
         var a = values[i];
 
-        if (i > 0) {
+        // initialize our return value
+        var return_val;
+        // we need to check that the year does not exceed the maximum year
+        if (i > 0 && year < a[0]) {
+            // preceding record
             var b = values[i - 1];
+            // compute the weighting
             var t = (year - a[0]) / (b[0] - a[0]);
-            return a[1] * (1-t) + b[1] * t;
+            // and weight our return value
+            return_val = a[1] * (1-t) + b[1] * t;
+        // otherwise, set the return value to the maximum record
+        } else {
+            return_val = a[1];
         }
-        // otherwise...
-        return a[1];
+
+
+        return return_val;
+
     }
 
 
@@ -444,6 +505,8 @@ function genParallelPlot(data) {
             return [position(p), y[p](d[p])];
         }));
     }
+
+
 
 
 }
