@@ -34,6 +34,49 @@ body {
     shape-rendering: crispEdges;
 }
 
+.brush .extent {
+    fill-opacity: .2;
+    stroke: #fff;
+    shape-rendering: crispEdges;
+}
+
+.background path {
+  stroke: #ccc;
+  stroke-opacity: .3;
+  shape-rendering: crispEdges;
+}
+
+
+.d3-tip {
+  line-height: 1;
+  font-weight: bold;
+  width: 100px;
+  text-align: center;
+  padding: 4px;
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+  border-radius: 2px;
+}
+
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
+
+
 .foreground path {
   fill: none;
   stroke-opacity: .7;
@@ -61,7 +104,12 @@ body {
     pointer-events: all;
 }
 
+
+
+.line {
+  fill: none;
 }
+
 
 
 </style>
@@ -135,7 +183,7 @@ body {
 
         <div class="col-md-4" id="right">
             <h4 class="header" align="center">X Axis</h4>
-            <select id="x-axis">
+            <select id="bubble-x-axis">
               <option id="Gov_to_total_spending" value="Gov_to_total_spending">Gov health spend / Total health spend</option>
               <option id="Gov_to_total_gov" value="Gov_to_total_gov">Gov health spend / Total gov spend</option>
               <option id="Outofpocket_to_private" value="Outofpocket_to_private">Out-of-pocket health spend / Private health spend</option>
@@ -148,7 +196,7 @@ body {
             </select>
 
             <h4 class="header" align="center">Y Axis</h4>
-            <select id="y-axis">
+            <select id="bubble-y-axis">
               <option id="Gov_to_total_spending" value="Gov_to_total_spending">Gov health spend / Total health spend</option>
               <option id="Gov_to_total_gov" value="Gov_to_total_gov">Gov health spend / Total gov spend</option>
               <option id="Outofpocket_to_private" value="Outofpocket_to_private">Out-of-pocket health spend / Private health spend</option>
@@ -159,6 +207,10 @@ body {
               <option id="Total_spending_to_GDP" value="Total_spending_to_GDP">Total health spend / GDP</option>
               <option id="Ext_resources_to_total_spending" value="Ext_resources_to_total_spending">External resources for health / Total health spend</option>
             </select>
+
+            <hr/>
+
+            <h4 id="bubble-legend" class="header" align="center"></h4>
         </div>
     </div>
 
@@ -170,11 +222,31 @@ body {
 
 <div class="row">
   <div class="b">
-    <div class="col-md-12">
+    <div class="col-md-8">
       <svg id="b" width="1100" height="500"</svg>
+    </div>
+    <div class="col-md-4">
+      <h4 id="parallel-legend" class="header" align="right"></h4>
     </div>
   </div>
 </div>
+<hr/>
+
+
+<div class="row">
+
+  <div class="col-md-8">
+    <div class="d">
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <h4 id="small-legend" class="header" align="right"></h4>
+  </div>
+
+</div>
+
+
 
 
 
