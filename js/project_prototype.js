@@ -685,14 +685,14 @@ function genParallelPlot(data) {
         .each(function(d,i) {
             var g = d3.select(this);
             g.append('rect')
-                .attr('x', 250)
+                .attr('x', 50)
                 .attr('y', 150 + i * 25)
                 .attr('width', 10)
                 .attr('height', 10)
                 .style('fill', colorScale(d));
 
             g.append('text')
-                .attr('x', 270)
+                .attr('x', 70)
                 .attr('y', 159 + (i * 25))
                 .attr('height', 30)
                 .attr('width', 100)
