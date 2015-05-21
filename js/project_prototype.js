@@ -1,12 +1,5 @@
-// initialize the data set as a global
-// FOR DEBUGGING PURPOSES
-var data_set;
+// author: Matt Shadish
 
-var small_multiples_dataset = [];
-
-
-var regional_avgs;
-var final_list;
 
 // global color mapping
 var color_mapping = {
@@ -30,12 +23,11 @@ d3.json('data/who_data_merged.json', function(error, data) {
 		return
 	}
 
-	data_set = data;
+	var data_set = data;
     genBubblePlot(data_set);
 
     genParallelPlot(data_set);
 
-    //genMultilineChart(data_set);
     genSmallMultiples(data_set);
 });
 
@@ -61,7 +53,7 @@ function genBubblePlot(data) {
 
 	// set the margins
     var margin = {top: 40, right: 80, bottom: 80, left: 50};
-    var width = 850 - margin.left - margin.right;
+    var width = 750 - margin.left - margin.right;
     var height = 500 - margin.top - margin.bottom;
 
     // set the x and y scales as well as the color scale
@@ -71,7 +63,6 @@ function genBubblePlot(data) {
     var yScale = d3.scale.linear()
     	.range([height, 0])
     	.domain([-min_axis_value, 100]);
-//    var colorScale = d3.scale.ordinal().range(colorbrewer.Dark2[6]);
     var radiusScale = d3.scale.sqrt()
         //.domain([1e7, 2e13])
         .domain([0, 2e13])
@@ -130,7 +121,7 @@ function genBubblePlot(data) {
         .attr('y', -margin.top/2)
         .style('text-anchor', 'middle')
         .style('font-size', 24)
-        .text('Health Spend, by country');
+        .text('Healthcare Expenditure by Country');
 
     // add the year label
     var label = svg.append('text')
@@ -246,8 +237,6 @@ function genBubblePlot(data) {
             } else {
                 return -50;
             }
-//            min_val = typeof min_val !== 'undefined' ? min_val : 0;
-  //          return min_val;
         }
 
         
@@ -347,8 +336,6 @@ function genBubblePlot(data) {
         dot.transition()
             .duration(1500)
         .call(position);
-
-        //console.log(document.getElementById('bubble_y_axis').innerHTML);
     };
 }
 
@@ -379,7 +366,6 @@ function genParallelPlot(data) {
 
     // specify the different scalings
     var x = d3.scale.ordinal().rangePoints([0, width], 1);
-//    var colorScale = d3.scale.ordinal().range(colorbrewer.Dark2[6]);
     var y = {};
     var dragging = {};
 
@@ -395,7 +381,7 @@ function genParallelPlot(data) {
 
     // initialize the svg
     var svg = d3.select("svg#b")
-        .attr("width", width + margin.left + margin.right)
+        .attr("width", width + margin.left + margin.right + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .style('padding', 30)
     .append("g")
@@ -407,7 +393,7 @@ function genParallelPlot(data) {
         .attr('y', -margin.top / 2)
         .attr('text-anchor', 'middle')
         .style('font-size', '20px')
-        .text('Health Spend Data, Parallel Coordinates');
+        .text('Healthcare Expenditure by Country');
 
 
     // let's specify the dimensions of the parallel plot
@@ -424,15 +410,6 @@ function genParallelPlot(data) {
     // bisector
     var bisect = d3.bisector(function(d) {return d[0]; });
 
-    /*
-    // testing the use of a background
-    background = svg.append('g')
-        .attr('class', 'background')
-    .selectAll('path')
-        .data(interpolateData(1995))
-    .enter().append('path')
-        .attr('d', path);
-    */
 
     // we will only use a foreground, to reduce the amount of data processing necessary
     foreground = svg.append('g')
@@ -477,8 +454,6 @@ function genParallelPlot(data) {
         .call(d3.behavior.drag()
                 .on('dragstart', function(d) {
                     dragging[d] = this.__origin__ = x(d);
-                    // temporarily hide the background
-                    //background.attr('visibility', 'hidden');
                 })
                 .on('drag', function(d) {
                     dragging[d] = Math.min(width, Math.max(0, this.__origin__ += d3.event.dx));
@@ -497,17 +472,9 @@ function genParallelPlot(data) {
                     transition(d3.select(this)).attr('transform', 'translate(' + x(d) + ')');
                     transition(foreground).attr('d', path);
                     
-                    /*
-                    background.attr('d', path)
-                        .transition()
-                        .delay(500)
-                        .duration(0)
-                        .attr('visibility', null);
-                    */
                 })
-                // CAN WE REPOSITION THE AXIS LABELS
-                // ON DRAG END??
         );
+
     // transition for axis moving
     function transition(g) {
         return g.transition().duration(500);
@@ -516,8 +483,6 @@ function genParallelPlot(data) {
     /*
     ====================================
     ADD THE BRUSHING FUNCTIONALITY HERE
-
-    Note that, if we want brushing, we need to include a background
     ====================================
     */
     g.append('g')
@@ -602,11 +567,6 @@ function genParallelPlot(data) {
     function displayYear(year) {
         foreground.data(interpolateData(year))
             .attr('d', path);
-        // testing background
-        /*
-        background.data(interpolateData(year))
-            .attr('d', path);
-        */
         label.text(Math.round(year));
     }
 
@@ -696,9 +656,9 @@ function genParallelPlot(data) {
 
 
     // ADD A LEGEND HERE
-    var legend = d3.select('h4#parallel-legend').append('svg')
-        .attr('height', 500)
-        .attr('width', 400);
+    var legend = svg.append('svg')
+        .attr('height', height + margin.top + margin.bottom)
+        .attr('width', width + margin.left + margin.right + margin.right);
 
 
     legend.attr('class', 'legend')
@@ -708,14 +668,14 @@ function genParallelPlot(data) {
         .each(function(d,i) {
             var g = d3.select(this);
             g.append('rect')
-                .attr('x', 50)
+                .attr('x', width)
                 .attr('y', 150 + i * 25)
                 .attr('width', 10)
                 .attr('height', 10)
                 .style('fill', color_mapping[d]);
 
             g.append('text')
-                .attr('x', 70)
+                .attr('x', width + 20)
                 .attr('y', 159 + (i * 25))
                 .attr('height', 30)
                 .attr('width', 100)
@@ -741,37 +701,38 @@ function genSmallMultiples(data) {
                   'Soc security spending on health / gov spending on health',
                   'Total spending on health / GDP',
                   'External resources for health / total spending on health'];
-    // also define the regions
-    var regions = ['Africa','Americas','Eastern Mediterranean','Europe',
-                   'Southeast Asia','Western Pacific'];
 
     // define the margins, sizes
     var margin = {top: 10, right: 20, bottom: 20, left: 40};
-    var width = 900 - margin.left - margin.right;
-    var height = 150 - margin.top - margin.bottom;
+    //var width = 900 - margin.left - margin.right;
+    var width = 450 - margin.left - margin.right;
+    //var height = 150 - margin.top - margin.bottom;
+    var height = 100 - margin.top - margin.bottom;
     // context height
-    var context_height = height;
+    var context_height = height/2;
 
     // scalings
     var xScale = d3.scale.linear()
         .domain([1995, 2012])
         .range([0, width]);
+
+    // make a y-scaling for each field
+
+    
     var yScale = d3.scale.linear()
-        .range([height, 0])
-        .domain([0, 100]);
-//    var colorScale = d3.scale.ordinal().range(colorbrewer.Dark2[6]);
+        .range([height, 0]);
+    
+
 
     // context x and y scales
-    var context_xScale = d3.scale.linear().range([0, width])
+    var context_xScale = d3.scale.linear().range([0, (width*2) + margin.left + margin.right])
         .domain(xScale.domain());
-    var context_yScale = d3.scale.linear().range([context_height, 0])
-        // what will we plot on this context plot?
-        .domain([0, 100]);
+
 
     // axis callback functions
     var yAxis = d3.svg.axis()
         .scale(yScale)
-        .ticks(3)
+        .ticks(2)
         .orient('left');
     var xAxis = d3.svg.axis()
         .scale(xScale)
@@ -786,8 +747,6 @@ function genSmallMultiples(data) {
     // initialize the brushing variable
     var brush = d3.svg.brush()
         .x(context_xScale)
-
-        
         .on('brush', brushed);
 
 
@@ -815,9 +774,9 @@ function genSmallMultiples(data) {
     WE MUST COMPUTE THE AVERAGES BY REGION
     =======================================
     */
-    regional_avgs = {};
+    var regional_avgs = {};
     // initialize how we'll keep track of the average for each
-    regions.forEach(function(d) {
+    global_regions.forEach(function(d) {
         regional_avgs[d] = {};
         fields.forEach(function(e) {
             regional_avgs[d][e] = {};
@@ -857,7 +816,7 @@ function genSmallMultiples(data) {
     var average_dict = {};
     fields.forEach(function(d) {
         average_dict[d] = {};
-        regions.forEach(function(e) {
+        global_regions.forEach(function(e) {
             average_dict[d][e] = [];
         })
     })
@@ -865,7 +824,7 @@ function genSmallMultiples(data) {
 
     // compute the averages
     // for each region...
-    regions.forEach(function(region) {
+    global_regions.forEach(function(region) {
         //...and each field in each region...
         fields.forEach(function(field) {
             var years = Object.keys(regional_avgs[region][field]);
@@ -879,7 +838,7 @@ function genSmallMultiples(data) {
     });
 
     // and now turn into a list
-    final_list = [];
+    var final_list = [];
     fields.forEach(function(field) {
         average_dict[field]['key'] = field;
         final_list.push(average_dict[field]);
@@ -890,8 +849,25 @@ function genSmallMultiples(data) {
     ==============================
     */
 
+    /*
+    COMPUTE THE MAXES, BY FIELD, FOR THE Y-DOMAINS
+    */
+    var field_max_lookup = {};
+    final_list.forEach(function(field) {
+        var field_max_list = [];
+        global_regions.forEach(function(region) {
+            var region_max = d3.max(field[region], function(d) {
+                return d[1];
+            });
+            field_max_list.push(region_max);
+        });
+        // update the y-domain for this field
+        field_max_lookup[field.key] = Math.max.apply(null, field_max_list);
+    });
+
 
     var svg = d3.select('div.d').append('g');
+
     var all_plots = svg.selectAll('.plots')
         .data(final_list)
     .enter().append('svg')
@@ -899,12 +875,12 @@ function genSmallMultiples(data) {
         .attr('height', height + margin.top + margin.bottom)
     .append('g')
         .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
-        .attr('id', function(d,i) {return String.fromCharCode(97 + i); });
+        .attr('id', function(d,i) {return 'small_multi_' + String.fromCharCode(97 + i); });
 
 
 
     // we need to add a separate path class for each region
-    regions.forEach(function(d) {
+    global_regions.forEach(function(d) {
         all_plots.append('svg')
             .attr('width', width)
             .attr('height', height)
@@ -912,19 +888,37 @@ function genSmallMultiples(data) {
             .attr('class', 'path_' + d.replace(/ /g, '_'))
             .attr('d', function(e) {
                 var input_list = e[d].map(toObject);
+                yScale.domain([0, field_max_lookup[e.key] + Math.min(field_max_lookup[e.key] * 0.2, 10)]);
                 return line(input_list);
             })
             .style('stroke', color_mapping[d])
             .style('fill', 'none')
-            .style('stroke-width', '2');
+            .style('stroke-width', '1.5');
     });
+
+
+    $( document ).ready(function() {
+
+        fields.forEach(function(d,i) {
+            yScale.domain([0, field_max_lookup[d] + Math.min(field_max_lookup[d] * 0.2, 10)]);
+            
+            d3.select('g#small_multi_' + String.fromCharCode(97 + i))
+                .attr('class', 'y axis')
+                .call(yAxis);
+
+        });
+    });
+
+
+    
+
 
 
     // add the context svg
     var context = d3.select('div.e').append('svg')
         .attr('class', 'context')
-        .attr('width', width + margin.left + margin.right)
-        .attr('height', context_height + margin.top + margin.bottom)
+        .attr('width', (width + margin.left + margin.right)*2)
+        .attr('height', context_height + margin.top + margin.top + margin.bottom)
     .append('g')
         .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
@@ -939,8 +933,14 @@ function genSmallMultiples(data) {
         .attr('class', 'x brush')
         .call(brush)
     .selectAll('rect')
-        .attr('y', -6)
-        .attr('height', context_height);
+        .attr('y', 0)
+        .attr('height', (context_height + 10));
+
+    // let's add some specifying text
+    context.append('text')
+        .attr('x', width)
+        .attr('y', context_height + 25)
+        .text('Brushing Axis');
 
 
 
@@ -950,10 +950,11 @@ function genSmallMultiples(data) {
         xScale.domain(brush.empty() ? context_xScale.domain() : brush.extent());
 
         // update the paths in each small multiple for each region
-        regions.forEach(function(d) {
+        global_regions.forEach(function(d) {
             all_plots.select('.path_' + d.replace(/ /g, '_'))
                 .attr('d', function(e) {
                     var input_list = e[d].map(toObject);
+                    yScale.domain([0, field_max_lookup[e.key] + Math.min(field_max_lookup[e.key] * 0.2, 10)]);
                     return line(input_list);
                 });
         });
@@ -977,18 +978,6 @@ function genSmallMultiples(data) {
     }
 
 
-    
-    
-
-
-    
-    // add the y-axis
-    all_plots.append('g')
-        .attr('class', 'y axis')
-        .call(yAxis)
-        .style('font-size', '10px');
-
-
 
     
     // add a title for each
@@ -1006,6 +995,12 @@ function genSmallMultiples(data) {
         .attr('height', 600)
         .attr('width', 400);
 
+    legend.append('text')
+        .attr('x', 0)
+        .attr('y', 50)
+        .style('font-size', '24px')
+        .text('Small Multiples');
+
 
     legend.attr('class', 'legend')
         .selectAll('rect')
@@ -1014,15 +1009,15 @@ function genSmallMultiples(data) {
         .each(function(d,i) {
             var g = d3.select(this);
             g.append('rect')
-                .attr('x', 200)
-                .attr('y', 450 + i * 25)
+                .attr('x', 0)
+                .attr('y', 150 + i * 25)
                 .attr('width', 10)
                 .attr('height', 10)
                 .style('fill', color_mapping[d]);
 
             g.append('text')
-                .attr('x', 220)
-                .attr('y', 459 + (i * 25))
+                .attr('x', 20)
+                .attr('y', 159 + (i * 25))
                 .attr('height', 30)
                 .attr('width', 100)
                 .style('font-size', '11px')
@@ -1030,13 +1025,18 @@ function genSmallMultiples(data) {
         });
 
 
-    // add an x-axis
-    var small_multiples_x = d3.select('g#i')
+    // add 2 x-axes, one for each "side"
+    var small_multiples_x_left = d3.select('g#small_multi_i')
         .append('g')
         .attr('class', 'x axis')
         .attr('transform', 'translate(0,' + height + ')')
-        .style('font-size', '12px')
+        .style('font-size', '14px')
+        .call(xAxis);
+    var small_multiples_x_right = d3.select('g#small_multi_h')
+        .append('g')
+        .attr('class', 'x axis')
+        .attr('transform', 'translate(0,' + height + ')')
+        .style('font-size', '14px')
         .call(xAxis);
 
-    
 }

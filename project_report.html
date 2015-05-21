@@ -27,6 +27,104 @@ body {
     padding-right: 50px;
     font: 16px sans-serif;
 }
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+
+.brush .extent {
+    fill-opacity: .2;
+    stroke: #fff;
+    shape-rendering: crispEdges;
+}
+
+.background path {
+  stroke: #ccc;
+  stroke-opacity: .3;
+  shape-rendering: crispEdges;
+}
+
+
+.d3-tip {
+  line-height: 1;
+  font-weight: bold;
+  width: 100px;
+  text-align: center;
+  padding: 4px;
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+  border-radius: 2px;
+}
+
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
+
+
+.foreground path {
+  fill: none;
+  stroke-opacity: .7;
+}
+
+.frame {
+  fill: none;
+}
+
+.background path {
+  fill: none;
+  stroke: #ccc;
+  stroke-opacity: .4;
+  shape-rendering: crispEdges;
+}
+
+.year.label {
+    font: 500 20px "Helvetica Neue";
+    fill: #000;
+}
+
+
+.overlay {
+    fill: none;
+    pointer-events: all;
+}
+
+
+
+.line {
+  fill: none;
+}
+
+
+.path {
+  fill: none;
+}
+
+.path1 {
+  fill: none;
+}
+
+p {
+    text-indent: 2em;
+}
+
+
+
 </style>
 
 
@@ -64,21 +162,119 @@ body {
 
 
 <div class="row">
-	<h1 class="header" align="center">Project Report</h1>
+	<h1 class="header" align="center">Worldwide Healthcare Spending</h1>
     <h3 class="header" align="center">Matt Shadish</h3>
     <h4 class="header" align="center">Source Code: <a href="https://github.com/mshadish/msan_622">github.com/mshadish/msan_622</a></h3>
 </div>
 <hr/>
 
+<div class="row">
+    <h2 class="header" align="center">Data Sources</h2>
+    <ul>
+        <li>WHO: <a href="http://apps.who.int/gho/data/node.main.75">Health expenditure ratios, by country</a></li>
+        <li>WHO: <a href="http://www.who.int/about/regions/en/">WHO world regions</a></li>
+        <li>The World Bank: <a href="http://data.worldbank.org/indicator/NY.GDP.MKTP.CD">GDP, by country</a></li>
+    </ul>
+</div>
+<hr/>
 
 <div class="row">
-	<h2 class="header" align="center">User Guide</h2>
+    <h2 class="header" align="center">Citations</h2>
+    <p>The bubble chart was inspired by Gapminder's <a href="http://www.gapminder.org/world/#$majorMode=chart$is;shi=t;ly=2003;lb=f;il=t;fs=11;al=30;stl=t;st=t;nsl=t;se=t$wst;tts=C$ts;sp=5.59290322580644;ti=2013$zpv;v=0$inc_x;mmid=XCOORDS;iid=phAwcNAVuyj1jiMAkmq1iMg;by=ind$inc_y;mmid=YCOORDS;iid=phAwcNAVuyj2tPLxKvvnNPA;by=ind$inc_s;uniValue=8.21;iid=phAwcNAVuyj0XOoBL_n5tAQ;by=ind$inc_c;uniValue=255;gid=CATID0;by=grp$map_x;scale=log;dataMin=194;dataMax=96846$map_y;scale=lin;dataMin=23;dataMax=86$map_s;sma=49;smi=2.65$cd;bd=0$inds=;example=75">Wealth &amp; Health of Nations</a> and draws on the technique of date interpolation in D3 from Mike Bostock's <a href="http://bost.ocks.org/mike/nations/">rendition</a> of the original visualization.  The date interpolation technique employed in the parallel coordinates plot was inspired by the same work from Mike Bostock.</p>
 </div>
 <hr/>
 
 
 <div class="row">
-	<h2 class="header" align="center">Visualizations</h2>
+	<h2 class="header" align="center">Interactivity</h2>
+    <p>For the small multiples time-series plots, I created a brushing axis below all of the plots to allow the user to change the date range shown in all 9 of the small multiples.  Note that the plots should be arranged in two side-by-side columns; if this isn't the case, try expanding the width of your browser window.  Because there are multiple plots being displayed and each plot is a multiline chart, the brushing functionality is not always as responsive as it would be ideally.  However, the added benefit of being able to focus in on a smaller date range (and thereby see more detail) outweighs the cost of the performance degradation.  Because each individual plot is so small, it is difficult to see some of the subtler differences between two regions in some of the plots, so without the brushing ability, these plots would be much less interpretable.</p>
+    <p> The bubble plot allows for the user to select which variables to compare.  In addition, by moving the mouse horizontally along the year display, he/she can control the year for which the data is displayed.  In conjunction, these two functionalities provide the user with an interactive 2-dimensional visualization of a 10-dimensional dataset.  I’ve also added a mouse-over tooltip to show the country associated with each bubble.</p>
+    <p>Similar to the bubble plot, the parallel coordinate plot allows for control over time via the year display.  The time adjustment feature allows for the user to see changes over time.  This plot also allows for brushing along any and/or all of the axes.  With brushing, the user can focus on some subset of the data and even follow that set of data over time.  However, in order to preserve performance, only the foreground is displayed when brushing.  Although we might lose some context, we can maintain visual continuity when the user adjusts the year.  On top of this brushing, the user can re-arrange the column order.</p>
+
+</div>
+<hr/>
+
+
+<div class="row">
+
+    <!-- SMALL MULTIPLES -->
+    <div class="row">
+
+      <!-- <div class="col-md-8"> -->
+      <div class="col-md-10">
+        <div class="d">
+        </div>
+        <div class="e">
+        </div>
+      </div>
+
+      <!-- <div class="col-md-4"> -->
+      <div class="col-md-2">
+        <h4 id="small-legend" class="header" align="right"></h4>
+      </div>
+
+    </div>
+
+    <hr/>
+
+    <!-- BUBBLE PLOT -->
+    <div class="a">
+        <div class="col-md-8" id="left">
+            <svg id="a" width="750" height="500"></svg>
+        </div>
+
+        <div class="col-md-4" id="right">
+            <h4 class="header" align="center">X Axis</h4>
+            <select id="bubble-x-axis">
+              <option id="Gov_to_total_spending" value="Gov_to_total_spending">Gov health spend / Total health spend</option>
+              <option id="Gov_to_total_gov" value="Gov_to_total_gov">Gov health spend / Total gov spend</option>
+              <option id="Outofpocket_to_private" value="Outofpocket_to_private">Out-of-pocket health spend / Private health spend</option>
+              <option id="Outofpocket_to_total_spending" value="Outofpocket_to_total_spending">Out-of-pocket health spend / Total health spend</option>
+              <option id="Private_prepaid_to_private_spending" value="Private_prepaid_to_private_spending">Private prepaids plans / Private health spend</option>
+              <option id="Private_spending_to_total_spending" value="Private_spending_to_total_spending">Private health spend / Total health spend</option>
+              <option id="Soc_sec_to_gov_health_spending" value="Soc_sec_to_gov_health_spending" selected="selected">Social security health spend / Gov health spend</option>
+              <option id="Total_spending_to_GDP" value="Total_spending_to_GDP">Total health spend / GDP</option>
+              <option id="Ext_resources_to_total_spending" value="Ext_resources_to_total_spending">External resources for health / Total health spend</option>
+            </select>
+
+            <h4 class="header" align="center">Y Axis</h4>
+            <select id="bubble-y-axis">
+              <option id="Gov_to_total_spending" value="Gov_to_total_spending">Gov health spend / Total health spend</option>
+              <option id="Gov_to_total_gov" value="Gov_to_total_gov">Gov health spend / Total gov spend</option>
+              <option id="Outofpocket_to_private" value="Outofpocket_to_private">Out-of-pocket health spend / Private health spend</option>
+              <option id="Outofpocket_to_total_spending" value="Outofpocket_to_total_spending" selected="selected">Out-of-pocket health spend / Total health spend</option>
+              <option id="Private_prepaid_to_private_spending" value="Private_prepaid_to_private_spending">Private prepaids plans / Private health spend</option>
+              <option id="Private_spending_to_total_spending" value="Private_spending_to_total_spending">Private health spend / Total health spend</option>
+              <option id="Soc_sec_to_gov_health_spending" value="Soc_sec_to_gov_health_spending">Social security health spend / Gov health spend</option>
+              <option id="Total_spending_to_GDP" value="Total_spending_to_GDP">Total health spend / GDP</option>
+              <option id="Ext_resources_to_total_spending" value="Ext_resources_to_total_spending">External resources for health / Total health spend</option>
+            </select>
+
+            <hr/>
+
+            <h4 id="bubble-legend" class="header" align="center"></h4>
+        </div>
+    </div>
+
+
+
+
+    <!-- PARALLEL PLOT -->
+    <div class="row">
+      <div class="b">
+        <div class="col-md-12">
+            <hr/>
+          <svg id="b" width="1100" height="500"</svg>
+        </div>
+        <!-- <div class="col-md-2">
+          <h4 id="parallel-legend" class="header" align="right"></h4>
+        </div> -->
+      </div>
+    </div>
+
+
+
+
 </div>
 <hr/>
 
@@ -89,20 +285,76 @@ body {
 
 
 	<h3 class="header">Techniques</h3>
+        <h4 class="header">Small Multiples</h4>
+    <p>This visualization shows the 9 features over time for the different regions.  Specifically, the values were averaged across region for every point in time between 1995 and 2012.  I had originally intended to plot lines for all of the countries; however, I realized that, since I was using small multiples, each smaller individual chart would end up looking very cluttered.</p>
+    <p>Because this is a small multiples visualization in which all of the plots share the same x-axis, the y-axis is much smaller relative to the x-axis.  As such, the lie factor has been increased slightly, and any changes in the y-axis values over time are slightly understated, even when I adjusted each individual small multiple to have a y-axis whose maximum value reflected the maximum of the time series it represents.</p>
+    <p>I specifically kept the x-axis labels to a minimum to increase the data/ink ratio.  In addition, to improve the data density (as well as support the brushing functionality, which we’ll discuss in a moment), I made the small multiples compact enough such that they could be placed side-by-side.</p>
+    <p>Unlike the other two visualizations, the small multiples are meant to show any changes over time in the standard time-series chart format.  Given this, I felt that a good way to allow the user to interact with the data was via a brushing option to specify the date range.  As mentioned previously, the small multiples were stacked side-by-side such that the user can see most, if not all, of the individual plots when he/she fiddles with the brushing axis.</p>
+    <p>The small multiples provide a good way to visualize time series data in a traditional time series manner.  Thus, I chose to use small multiples in contrast with the previous two visualizations, which provide a better cross-sectional view of the data.  Since I aggregated the data by region before plotting, this plot is ideal for identifying trends as well as patterns with respect to regions of the world.</p>
+
+    <br>
+
+    <h4 class="header">Bubble Plot</h4>
+    <p> This visualization was inspired by Hans Rosling’s The Wealth & Health of Nations, but I added functionality to allow the user to specify which of the 9 features he/she would like to see displayed at a given time.  In order to differentiate the different bubbles, I color-coded each data point based on its region (as determined by the World Health Organization) and scaled each radius according to the given country’s GDP.  For additional clarity, I included a tooltip for each data point to display the country name.  Although I would normally show all of this data as a scatterplot matrix (rather than a custom bubble plot), I opted for this custom chart in order to incorporate an additional time dimension to the visualization.  The user can simply hover over the year display to show the data for a particular year.</p>
+    <p>I tried to keep the lie factor to a minimum by showing the full range of percentages on each axis that each variable can take on.  In addition, I scaled each bubble radius by the square root of GDP to avoid over-stating differences in GDP among countries.  Although the data/ink ratio is high in this visualization, the data density could potentially be increased by displaying all of the different combinations of features simultaneously (e.g., via a scatterplot matrix).  Of course, this would make it harder for the user to visualize any trends over time, which is what I was trying to accomplish with this bubble chart.</p>
+    <p>This visualization was built to allow the user to explore different correlations that might exist and any trends that arise over the course of the ~20 years that this study spans.  Because I added a color scale to differentiate companies from different regions of the world, these trends can be identified among regions as well as among individual countries.</p>
+    <br>
+
+    <h4 class="header">Parallel Coordinates</h4>
+    <p> The parallel plot displays all 9 of the health spend features as well as GDP and world region.  Similar to the bubble chart, the parallel plot has a time-series component that can be adjusted using the display year in the top left of the visualization.  Because the field names must be very long in order to encapsulate what is being captured (i.e., Out-of-pocket health spend / Private health spend), I alternated between the top and bottom of the figure when displaying the axis label.  However, because I allow for the user to re-order the axes, this initial alternating of axis labels is only shown in the initial plot.</p>
+    <p>I also added a brushing feature to allow the user to select subsets of the data.  Because of the volume of data, however, I elected to not show any background data points.  This means that, when the user selects a subset of the data to track over time, only that subset of data is visible.</p>
+    <p>The data/ink ratio and the data density of this plot are both relatively high.  In order to keep the lie factor of the parallel plot to a minimum, I made sure that every axis starts at 0.  However, because the range of GDP values is so large, I was forced to use a logarithmic scale for the GDP axis, which may slightly increase the lie factor.</p>
+
+    <br>
 
 
-	<h3 class="header">Interactivity</h3>
+    <hr/>
 
 
 	<h3 class="header">Feedback</h3>
+    <p>In class, I demonstrated the bubble chart.  The most common complaint I received was that the axes only spanned from 0 to 100, and so any points that had a 0 value were displayed on top of the x- or y-axis.  To solve this, I simply set the minimum value on each axis to be slightly below zero, leaving enough space to accommodate the largest bubble radius.</p>
+    <p>Although I had already been planning to adjust the coloring of each bubble by some grouping variable (as opposed to coloring each country individually), a few people agreed that it would look a little better to color by some group than the rainbow-smattering shown when each country was colored individually.  To achieve this, I merged the health data with world region groupings according to the World Health Organization, effectively splitting the countries into six groups: Africa, Americas, Europe, Eastern Mediterranean, Southeast Asia, and Western Pacific.</p>
+    <p>The most helpful feedback I received was a comment that said the bubble chart might do better as something like a scatterplot matrix or small multiples.  Although I elected to keep the bubble chart and its custom axes in order to make it easier to see any trends over time, I took this feedback into consideration and changed my third plot from a time-series plot with a custom y-axis to a series of small multiples.</p>
+    <hr/>
+
 
 
 	<h3 class="header">Challenges</h3>
+    <h4 class="header">The Data</h4>
+    <p>Before creating any of the visualizations, I had to merge in regional classification and GDP data.  Although I was able to find relevant datasets from the World Health Organization and the World Bank Group, I had to deal with issues of unmatched country names.  As an example, a country in the health dataset (i.e., United States) might have had a different name in the GDP dataset (i.e., The United States of America), and so I had to go in and manually match several unmatched countries.</p>
+    <p>Once the data had been merged and reformatted to JSON, I still had an issue with missing data in the health dataset itself.  Some countries were missing data for a year or two for a particular field, while other countries simply had no data for an entire field.</p>
 
+    <br>
+    <h4 class="header">Small Multiples</h4>
+    <p>The small multiples multiline plots proved to be the trickiest.  Initially, I had wanted to plot every single country’s time series for each of the 9 features over time.  However, given that these were small multiples, I was worried that the plots would end up looking like a block of colors and lose any interpretability.  Instead, I settled for plotting the averages associated with each of the six regions.</p>
+    <p>In order to plot each region’s averages, I had to aggregate the data that was being loaded in JSON form.  While it would have been much easier to do the pre-processing on the original CSV and add an aggregated dataset to the list of files sourced by the HTML, I wanted to minimize the number of resources drawn by the webpage.  Therefore, I wrote a few steps in JavaScript to transform the original data in JSON into a list of objects with our summary data.</p>
+    <p>When it came to the actual plotting, I initially struggled with figuring out how to create a multiline plot for each small multiple without having to manually plot every single line.  Eventually, I wrote a loop to step through a list of regions and, for each region, plot the region’s associated values on our list of SVG multiples.</p>
+    <p>The next challenge was implementing brushing for all nine of these plots.  This required a loop through each region to adjust that region’s line whenever the brushing function was called.  Unfortunately, this feature causes an inconsistent degradation in the visualization’s performance and responsiveness; however, I felt that this interactive feature was essential for allowing users to focus on parts of a plot that are otherwise hard to see (since these are small multiples and are harder to pick out details from).</p>
+    <p>The final challenge involved adjusting the y-axis for each individual multiple.  Each of the nine fields had a different maximum percentage; if I created all nine plots with a maximum y-value of 100%, then the fields that only take on values in the 5-10% range would simply look like flat lines.  For this reason, I couldn’t use the standard <i>.call(yAxis)</i> framework.  Instead, for each small multiple, I created a unique id, specified as “small_multi_(letter a-i, specifying one of the nine fields).”  Then, after all of these individual plots had been created, I went back and called <i>yAxis()</i>, adjusting the domain for the y-axis scale for each plot.  This required some very basic use of jQuery (which I have never used until just now) to wait for the page to load completely before selecting these individual plots.</p>
+
+    <br>
+    <h4 class="header">Bubble Plot</h4>
+    <p>In the case where a country was missing a data points for several years, I imputed the value by computing a weighted average of the most recent data point and the nearest upcoming data point.  If there were no data points either before or after the particular year, I used the most recent data point.</p>
+    <p>To illustrate, let’s say we have data for years 1998-2005 as well as 2008-2010 for the <i>Gov health spend / Total gov spend</i> of a particular country, keeping in mind that our data spans from 1995 to 2012.  If we want the data point for year 2006, we would compute the average of the data points at 2005 and 2008, weighting the point at 2005 twice as much.  If we want the <i>Gov health spend / Total gov spend</i> for year 1997 or earlier, we will simply take the data point at 1998.  Likewise, if we want data for years 2011 or 2012, we will take the data point at 2010.</p>
+    <p>In the cases where there simply was no data at all for a particular field, I plotted the point at some value outside of the (-6, 100) bounds of the axes.  Thus, when the user selects an axis label for which there is no data for a particular country, the bubble for that country will transition off the page.  Although I had originally set these points to 0, I elected to simply not display these data points to decrease the lie factor.</p>
+
+    <br>
+    <h4 class="header">Parallel Coordinates</h4>
+    <p>I was able to handle the case of several missing points in the same fashion as the bubble chart.  For the case of the fields that have no data points for a particular country, however, I could not simply move these points off-screen.  Instead, I chose not to plot any line to or from that y-axis for the given country.  As a side effect, however, this will prevent the user from seeing any data near the edge of the plot if the empty field is also near the edge of the plot.  For example, let’s say we have a country that has no data points for the field, <i>External resources for health / Total health spend</i>.  If this variable is positioned 2nd from the left in the parallel coordinate plot, then we will inherently have no display of whatever variable is represented by the leftmost axis, regardless of whether or not that data point exists.  Despite this, I felt that this was less misleading than the alternative of imputing 0 or the average.</p>
+    <p>I also had to wrestle with balancing the brushing functionality with the transitioning of the parallel coordinates over time.  Traditionally, brushing requires a foreground as well as a background in order to differentiate what has been selected from what has not.  However, when I plotted both the foreground and the background parallel coordinates, the performance of the transitions over time was severely diminished.  In order to maintain visual continuity as the years are adjusted, I chose to only plot the foreground.  Although this meant that we wouldn’t have any context when brushing, it ensured that we would not lose visual continuity due to performance issues as the user adjusted the years.</p>
+    <p>In addition to wrestling with missing data, I had to figure out how to display the axis titles clearly.  The field names are all very long but contain descriptive information that I could not condense; however, when I added axis label text to each axis, the labels overwrote each other.  To get around this, I alternated between adding an axis label above and below the plot.</p>
+
+
+    <hr/>
 
 	<h3 class="Conclusion">Conclusion</h3>
-</div>
+    <p>Given the many dimensions to our dataset, there are many different conclusions that may be drawn about global healthcare spending from 1995 to 2012.  What is most apparent by looking at the both the parallel coordinates and the small multiples is that, on the whole, European governments spend much more of their social security on health as a percentage of total government spending on health.  We also can see that, across the board, most private health spending comes in the form of out-of-pocket spending, implying that private healthcare spending in many countries around the globe is mainly represented by people paying with their own money.</p>
+    <p>We can also draw some interesting conclusions from what we don’t see.  Obviously, there is a negative correlation between out-of-pocket spending and government spending on health, i.e., if one group isn’t contributing as much, the other must pick up the tab.  However, although there may be some negative correlation between out-of-pocket spending and social security spending on health, the bubble chart shows a weak correlation at best.  This suggests that, regardless of how much people must pay out-of-pocket for healthcare, the form in which the government helps pick up the tab (if it does) is not necessarily through some sort of a social security program.</p>
+    <p>In addition to looking at trends, the bubble plot visualization allows us to focus in on individual countries.  For example, the United States is one of the top countries when it comes to healthcare spending as a fraction of total GDP, which makes sense in the context of the USA’s trillion-dollar healthcare industry.  In addition, private prepaid plans are very popular in the United States, making up approximately 60% of the total amount of private money flowing into healthcare.  The only other Western country that has consistently shown similar spending from private prepaid plans is France.</p>
+    <p>Unrelated to the topic of healthcare spending, the GDP growth of China over the past two decades is unprecedented, as demonstrated using the time aspect of the bubble chart.  Conversely, we can see the effects of Japan’s recession on its GDP, with its bubble size staying relatively constant over the course of 20 years.</p>
+    <p>These are just a few of the conclusions that can be drawn from the data.  The purpose of these visualizations is to allow users to either drill down on specific countries or look for trends in the larger picture.  Given this goal, these visualizations proved to be very useful.</p>
 
+</div>
 
 
 
